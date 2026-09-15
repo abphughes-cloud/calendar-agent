@@ -4,10 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import type { CategorizedEvent } from "@/lib/category";
 import { ALL_CATEGORIES, categoryStyle } from "@/lib/category";
+import type { PlanEvent } from "@/lib/planning";
 import { layoutOverlaps } from "@/lib/layout";
 import { addDays, formatDayHeader, formatWeekRangeLabel, startOfWeek, toDateKey } from "@/lib/week";
 import EventBlock from "@/components/EventBlock";
 import EventDetailModal from "@/components/EventDetailModal";
+import PlanEventBlock from "@/components/PlanEventBlock";
+import PlanEventModal from "@/components/PlanEventModal";
 
 const START_HOUR = 6;
 const END_HOUR = 23;
@@ -20,11 +23,11 @@ function minutesOfDay(iso: string): number {
   return d.getHours() * 60 + d.getMinutes();
 }
 
-function blockPosition(event: CategorizedEvent) {
+function computeBlockPosition(startIso: string, endIso: string | null) {
   const gridStartMin = START_HOUR * 60;
   const gridEndMin = END_HOUR * 60;
-  const rawStart = event.start ? minutesOfDay(event.start) : gridStartMin;
-  const rawEnd = event.end ? minutesOfDay(event.end) : rawStart + 30;
+  const rawStart = minutesOfDay(startIso);
+  const rawEnd = endIso ? minutesOfDay(endIso) : rawStart + 30;
 
   const start = Math.min(Math.max(rawStart, gridStartMin), gridEndMin);
   const end = Math.min(Math.max(Math.max(rawEnd, rawStart + 20), gridStartMin), gridEndMin);
@@ -38,14 +41,27 @@ function blockPosition(event: CategorizedEvent) {
   return { top, height };
 }
 
+function blockPosition(event: CategorizedEvent) {
+  return computeBlockPosition(event.start ?? new Date().toISOString(), event.end);
+}
+
+function planBlockPosition(event: PlanEvent) {
+  return computeBlockPosition(event.start_time, event.end_time);
+}
+
 export default function WeekCalendar({
   weekStart,
   events,
+  planEvents,
 }: {
   weekStart: Date;
   events: CategorizedEvent[];
+  planEvents: PlanEvent[];
 }) {
   const [selectedEvent, setSelectedEvent] = useState<CategorizedEvent | null>(
+    null
+  );
+  const [selectedPlanEvent, setSelectedPlanEvent] = useState<PlanEvent | null>(
     null
   );
 
@@ -59,6 +75,14 @@ export default function WeekCalendar({
     const list = eventsByDay.get(key) ?? [];
     list.push(event);
     eventsByDay.set(key, list);
+  }
+
+  const planEventsByDay = new Map<string, PlanEvent[]>();
+  for (const event of planEvents) {
+    const key = toDateKey(new Date(event.start_time));
+    const list = planEventsByDay.get(key) ?? [];
+    list.push(event);
+    planEventsByDay.set(key, list);
   }
 
   const hours = Array.from(
@@ -90,15 +114,23 @@ export default function WeekCalendar({
             Today
           </Link>
         </div>
-        <Link
-          href={nextWeekHref}
-          className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-        >
-          Next →
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/plan/new"
+            className="rounded-md border border-indigo-300 bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-700 hover:bg-indigo-100"
+          >
+            + Add plan event
+          </Link>
+          <Link
+            href={nextWeekHref}
+            className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            Next →
+          </Link>
+        </div>
       </div>
 
-      <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1">
+      <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1">
         {ALL_CATEGORIES.map((category) => (
           <div key={category} className="flex items-center gap-1.5">
             <span
@@ -107,6 +139,10 @@ export default function WeekCalendar({
             <span className="text-xs text-gray-500">{category}</span>
           </div>
         ))}
+        <div className="flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-full border-2 border-dashed border-indigo-400 bg-indigo-50" />
+          <span className="text-xs text-gray-500">Plan (not on Google)</span>
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
@@ -132,11 +168,18 @@ export default function WeekCalendar({
             const dayEvents = eventsByDay.get(dayKey) ?? [];
             const allDayEvents = dayEvents.filter((e) => e.isAllDay);
             const timedEvents = dayEvents.filter((e) => !e.isAllDay);
+            const dayPlanEvents = planEventsByDay.get(dayKey) ?? [];
 
             const laidOut = layoutOverlaps(
               timedEvents,
               (e) => new Date(e.start as string).getTime(),
               (e) => new Date(e.end ?? (e.start as string)).getTime()
+            );
+
+            const laidOutPlan = layoutOverlaps(
+              dayPlanEvents,
+              (e) => new Date(e.start_time).getTime(),
+              (e) => new Date(e.end_time).getTime()
             );
 
             return (
@@ -201,6 +244,21 @@ export default function WeekCalendar({
                       />
                     );
                   })}
+
+                  {laidOutPlan.map(({ event, column, columnCount }) => {
+                    const { top, height } = planBlockPosition(event);
+                    return (
+                      <PlanEventBlock
+                        key={event.id}
+                        event={event}
+                        top={top}
+                        height={height}
+                        left={`calc(${(column / columnCount) * 100}% + 1px)`}
+                        width={`calc(${100 / columnCount}% - 2px)`}
+                        onSelect={setSelectedPlanEvent}
+                      />
+                    );
+                  })}
                 </div>
               </div>
             );
@@ -211,6 +269,10 @@ export default function WeekCalendar({
       <EventDetailModal
         event={selectedEvent}
         onClose={() => setSelectedEvent(null)}
+      />
+      <PlanEventModal
+        event={selectedPlanEvent}
+        onClose={() => setSelectedPlanEvent(null)}
       />
     </div>
   );

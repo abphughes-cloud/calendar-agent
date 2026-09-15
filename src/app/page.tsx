@@ -1,7 +1,10 @@
+import Link from "next/link";
 import { auth, signIn, signOut } from "@/auth";
 import { CalendarApiError, fetchUpcomingEvents } from "@/lib/calendar";
 import { withCategory } from "@/lib/category";
 import { addDays, parseDateKey, startOfWeek } from "@/lib/week";
+import type { PlanEvent } from "@/lib/planning";
+import { createClient } from "@/utils/supabase/server";
 import WeekCalendar from "@/components/WeekCalendar";
 import CalendarDebugPanel from "@/components/CalendarDebugPanel";
 
@@ -80,6 +83,24 @@ export default async function Home({ searchParams }: PageProps<"/">) {
 
   const events = (result?.events ?? []).map(withCategory);
 
+  // Supabase planning-layer overlay. Independent of the Google fetch above:
+  // if this fails, the Google Calendar view must still render normally.
+  let planEvents: PlanEvent[] = [];
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("plan_events")
+      .select("*")
+      .gte("start_time", weekStart.toISOString())
+      .lt("start_time", weekEnd.toISOString())
+      .order("start_time", { ascending: true });
+
+    if (error) throw error;
+    planEvents = data ?? [];
+  } catch (error) {
+    console.error("[Supabase] Failed to load plan_events", error);
+  }
+
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
       <header className="mb-6 flex items-center justify-between">
@@ -93,19 +114,27 @@ export default async function Home({ searchParams }: PageProps<"/">) {
             </p>
           )}
         </div>
-        <form
-          action={async () => {
-            "use server";
-            await signOut();
-          }}
-        >
-          <button
-            type="submit"
+        <div className="flex items-center gap-2">
+          <Link
+            href="/preferences"
             className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
           >
-            Sign out
-          </button>
-        </form>
+            Preferences
+          </Link>
+          <form
+            action={async () => {
+              "use server";
+              await signOut();
+            }}
+          >
+            <button
+              type="submit"
+              className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+            >
+              Sign out
+            </button>
+          </form>
+        </div>
       </header>
 
       {errorMessage ? (
@@ -118,7 +147,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
           )}
         </div>
       ) : (
-        <WeekCalendar weekStart={weekStart} events={events} />
+        <WeekCalendar weekStart={weekStart} events={events} planEvents={planEvents} />
       )}
 
       {result && (
