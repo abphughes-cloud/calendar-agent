@@ -3,9 +3,10 @@ import { auth, signIn, signOut } from "@/auth";
 import { CalendarApiError, fetchUpcomingEvents } from "@/lib/calendar";
 import { withCategory } from "@/lib/category";
 import { addDays, parseDateKey, startOfWeek } from "@/lib/week";
-import type { PlanEvent } from "@/lib/planning";
+import type { AgentSuggestion, PlanEvent } from "@/lib/planning";
 import { createClient } from "@/utils/supabase/server";
 import WeekCalendar from "@/components/WeekCalendar";
+import AgentPanel from "@/components/AgentPanel";
 import CalendarDebugPanel from "@/components/CalendarDebugPanel";
 
 export default async function Home({ searchParams }: PageProps<"/">) {
@@ -101,8 +102,25 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     console.error("[Supabase] Failed to load plan_events", error);
   }
 
+  // Pending suggestions from the training agent, independent of the fetches
+  // above for the same reason: a failure here must not break the calendar.
+  let suggestions: AgentSuggestion[] = [];
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("agent_suggestions")
+      .select("*")
+      .eq("status", "pending")
+      .order("start_time", { ascending: true });
+
+    if (error) throw error;
+    suggestions = data ?? [];
+  } catch (error) {
+    console.error("[Supabase] Failed to load agent_suggestions", error);
+  }
+
   return (
-    <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
+    <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8">
       <header className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">
@@ -147,7 +165,18 @@ export default async function Home({ searchParams }: PageProps<"/">) {
           )}
         </div>
       ) : (
-        <WeekCalendar weekStart={weekStart} events={events} planEvents={planEvents} />
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+          <div className="min-w-0 flex-1">
+            <WeekCalendar
+              weekStart={weekStart}
+              events={events}
+              planEvents={planEvents}
+            />
+          </div>
+          <div className="lg:w-80 lg:flex-shrink-0">
+            <AgentPanel initialSuggestions={suggestions} />
+          </div>
+        </div>
       )}
 
       {result && (

@@ -27,6 +27,20 @@ export interface PlanEvent {
   updated_at: string;
 }
 
+export interface AgentSuggestion {
+  id: string;
+  title: string;
+  type: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  location: string | null;
+  intensity: string | null;
+  reason: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export const PLAN_EVENT_TYPES = [
   "Swim",
   "Bike",

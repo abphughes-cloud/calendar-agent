@@ -44,6 +44,36 @@ export async function createPlanEvent(formData: FormData) {
   redirect("/");
 }
 
+export async function createPlanEventFromSuggestion(
+  suggestionId: string,
+  formData: FormData
+) {
+  const session = await auth();
+  const supabase = await createClient();
+  const fields = readPlanEventForm(formData);
+
+  const { error: insertError } = await supabase.from("plan_events").insert({
+    ...fields,
+    created_by: session?.user?.email ?? null,
+  });
+
+  if (insertError) {
+    throw new Error(`Failed to create plan event: ${insertError.message}`);
+  }
+
+  const { error: updateError } = await supabase
+    .from("agent_suggestions")
+    .update({ status: "edited" })
+    .eq("id", suggestionId);
+
+  if (updateError) {
+    console.error("[Agent] Failed to mark suggestion as edited", updateError);
+  }
+
+  revalidatePath("/");
+  redirect("/");
+}
+
 export async function updatePlanEvent(id: string, formData: FormData) {
   const supabase = await createClient();
   const fields = readPlanEventForm(formData);
