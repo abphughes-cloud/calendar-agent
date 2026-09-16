@@ -153,11 +153,40 @@ export default function SuggestionDetailModal({
             {duration}
           </p>
         )}
+        {suggestion.distance && (
+          <p className="mb-2 text-sm text-gray-600">
+            <span className="font-medium text-gray-500">Distance: </span>
+            {suggestion.distance}
+          </p>
+        )}
+        {suggestion.pace_or_effort && (
+          <p className="mb-2 text-sm text-gray-600">
+            <span className="font-medium text-gray-500">Target pace/effort: </span>
+            {suggestion.pace_or_effort}
+          </p>
+        )}
         {suggestion.location && (
           <p className="mb-2 text-sm text-gray-600">
             <span className="font-medium text-gray-500">Location: </span>
             {suggestion.location}
           </p>
+        )}
+        {suggestion.plan_reference && (
+          <p className="mb-2 text-sm text-gray-600">
+            <span className="font-medium text-gray-500">Training plan: </span>
+            {suggestion.plan_reference}
+          </p>
+        )}
+
+        {suggestion.structure && (
+          <div className="mt-3 border-t border-gray-100 pt-3">
+            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-gray-400">
+              Session structure
+            </p>
+            <p className="whitespace-pre-wrap text-sm text-gray-700">
+              {suggestion.structure}
+            </p>
+          </div>
         )}
 
         {suggestion.reason && (
@@ -168,6 +197,12 @@ export default function SuggestionDetailModal({
             <p className="whitespace-pre-wrap text-sm text-gray-700">
               {suggestion.reason}
             </p>
+          </div>
+        )}
+
+        {suggestion.risk_warning && (
+          <div className="mt-3 rounded-md border border-red-200 bg-red-50 p-2 text-xs text-red-700">
+            {suggestion.risk_warning}
           </div>
         )}
 

@@ -23,6 +23,10 @@ export interface PlanEvent {
   status: string;
   notes: string | null;
   created_by: string | null;
+  distance: string | null;
+  structure: string | null;
+  pace_or_effort: string | null;
+  plan_reference: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -36,6 +40,11 @@ export interface AgentSuggestion {
   location: string | null;
   intensity: string | null;
   reason: string | null;
+  distance: string | null;
+  structure: string | null;
+  pace_or_effort: string | null;
+  plan_reference: string | null;
+  risk_warning: string | null;
   status: string;
   created_at: string;
   updated_at: string;
@@ -45,6 +54,7 @@ export const PLAN_EVENT_TYPES = [
   "Swim",
   "Bike",
   "Run",
+  "Brick",
   "Strength",
   "Study",
   "Social",

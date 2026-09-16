@@ -28,6 +28,27 @@ export default function PlanEventForm({
 }) {
   return (
     <form action={action} className="space-y-4">
+      {defaultValues?.distance != null && (
+        <input type="hidden" name="distance" value={defaultValues.distance} />
+      )}
+      {defaultValues?.structure != null && (
+        <input type="hidden" name="structure" value={defaultValues.structure} />
+      )}
+      {defaultValues?.pace_or_effort != null && (
+        <input
+          type="hidden"
+          name="pace_or_effort"
+          value={defaultValues.pace_or_effort}
+        />
+      )}
+      {defaultValues?.plan_reference != null && (
+        <input
+          type="hidden"
+          name="plan_reference"
+          value={defaultValues.plan_reference}
+        />
+      )}
+
       <label className="block">
         <span className={LABEL_CLASS}>Title</span>
         <input

@@ -42,9 +42,19 @@ create table if not exists plan_events (
   status text not null default 'planned',
   notes text,
   created_by text,
+  distance text,
+  structure text,
+  pace_or_effort text,
+  plan_reference text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Migration for a table created before these columns existed.
+alter table plan_events add column if not exists distance text;
+alter table plan_events add column if not exists structure text;
+alter table plan_events add column if not exists pace_or_effort text;
+alter table plan_events add column if not exists plan_reference text;
 
 -- ---------------------------------------------------------------------
 -- agent_suggestions: reserved for a future LLM-driven suggestion
@@ -60,9 +70,21 @@ create table if not exists agent_suggestions (
   intensity text,
   reason text,
   status text not null default 'pending',
+  distance text,
+  structure text,
+  pace_or_effort text,
+  plan_reference text,
+  risk_warning text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Migration for a table created before these columns existed.
+alter table agent_suggestions add column if not exists distance text;
+alter table agent_suggestions add column if not exists structure text;
+alter table agent_suggestions add column if not exists pace_or_effort text;
+alter table agent_suggestions add column if not exists plan_reference text;
+alter table agent_suggestions add column if not exists risk_warning text;
 
 -- ---------------------------------------------------------------------
 -- feedback: reserved for feedback on future agent suggestions. No app

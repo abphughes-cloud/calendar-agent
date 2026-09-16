@@ -100,9 +100,41 @@ export default function PlanEventModal({
             {event.intensity}
           </p>
         )}
+        {event.distance && (
+          <p className="mb-2 text-sm text-gray-600">
+            <span className="font-medium text-gray-500">Distance: </span>
+            {event.distance}
+          </p>
+        )}
+        {event.pace_or_effort && (
+          <p className="mb-2 text-sm text-gray-600">
+            <span className="font-medium text-gray-500">Target pace/effort: </span>
+            {event.pace_or_effort}
+          </p>
+        )}
+        {event.plan_reference && (
+          <p className="mb-2 text-sm text-gray-600">
+            <span className="font-medium text-gray-500">Training plan: </span>
+            {event.plan_reference}
+          </p>
+        )}
+
+        {event.structure && (
+          <div className="mt-3 border-t border-gray-100 pt-3">
+            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-gray-400">
+              Session structure
+            </p>
+            <p className="whitespace-pre-wrap text-sm text-gray-700">
+              {event.structure}
+            </p>
+          </div>
+        )}
 
         {event.notes && (
           <div className="mt-3 border-t border-gray-100 pt-3">
+            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-gray-400">
+              Notes
+            </p>
             <p className="whitespace-pre-wrap text-sm text-gray-700">
               {event.notes}
             </p>

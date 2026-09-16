@@ -23,6 +23,10 @@ export async function acceptSuggestion(suggestion: AgentSuggestion) {
     status: "planned",
     notes: suggestion.reason,
     created_by: session?.user?.email ?? null,
+    distance: suggestion.distance,
+    structure: suggestion.structure,
+    pace_or_effort: suggestion.pace_or_effort,
+    plan_reference: suggestion.plan_reference,
   });
 
   if (insertError) {

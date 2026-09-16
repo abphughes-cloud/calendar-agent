@@ -32,6 +32,10 @@ export default async function NewPlanEventPage({
         location: suggestion.location,
         intensity: suggestion.intensity,
         notes: suggestion.reason,
+        distance: suggestion.distance,
+        structure: suggestion.structure,
+        pace_or_effort: suggestion.pace_or_effort,
+        plan_reference: suggestion.plan_reference,
       };
       action = createPlanEventFromSuggestion.bind(null, fromSuggestion);
       heading = "Edit suggestion";

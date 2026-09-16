@@ -88,6 +88,7 @@ export async function POST() {
       preferences: (preferences as UserPreferences | null) ?? null,
       freeWindows,
       athleteContext,
+      today: now,
     });
   } catch (error) {
     console.error("[Agent] Failed to generate suggestions", error);

@@ -23,6 +23,10 @@ function readPlanEventForm(formData: FormData) {
     intensity: formData.get("intensity")?.toString() || null,
     status: formData.get("status")?.toString() || "planned",
     notes: formData.get("notes")?.toString() || null,
+    distance: formData.get("distance")?.toString() || null,
+    structure: formData.get("structure")?.toString() || null,
+    pace_or_effort: formData.get("pace_or_effort")?.toString() || null,
+    plan_reference: formData.get("plan_reference")?.toString() || null,
   };
 }
 
