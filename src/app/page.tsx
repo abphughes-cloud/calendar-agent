@@ -110,6 +110,8 @@ export default async function Home({ searchParams }: PageProps<"/">) {
       .from("agent_suggestions")
       .select("*")
       .eq("status", "pending")
+      .gte("start_time", weekStart.toISOString())
+      .lt("start_time", weekEnd.toISOString())
       .order("start_time", { ascending: true });
 
     if (error) throw error;

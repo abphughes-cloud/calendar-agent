@@ -45,6 +45,31 @@ export async function acceptSuggestion(suggestion: AgentSuggestion) {
   revalidatePath("/");
 }
 
+/**
+ * Removes only pending suggestions within [weekStartISO, weekEndISO). Never
+ * touches plan_events (accepted/manual workouts) or any suggestion whose
+ * status isn't 'pending' — Google Calendar has no write path in this app.
+ */
+export async function clearPendingSuggestions(
+  weekStartISO: string,
+  weekEndISO: string
+) {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("agent_suggestions")
+    .delete()
+    .eq("status", "pending")
+    .gte("start_time", weekStartISO)
+    .lt("start_time", weekEndISO);
+
+  if (error) {
+    throw new Error(`Failed to clear suggestions: ${error.message}`);
+  }
+
+  revalidatePath("/");
+}
+
 export async function rejectSuggestion(id: string, feedbackText?: string) {
   const supabase = await createClient();
 

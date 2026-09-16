@@ -8,8 +8,13 @@ const MODEL = "gpt-4o-mini";
 const TRAINING_TYPES = ["Swim", "Bike", "Run", "Brick", "Strength"] as const;
 const INTENSITIES = ["Low", "Medium", "High"] as const;
 const MAIN_TYPES = new Set<string>(["Swim", "Bike", "Run", "Brick"]);
-const MIN_SUGGESTIONS = 4;
-const MAX_SUGGESTIONS = 7;
+const MIN_SUGGESTIONS = 2;
+const MAX_SUGGESTIONS = 4;
+
+export interface ExistingWorkout {
+  type: string | null;
+  start_time: string;
+}
 
 export interface TriathlonSuggestion {
   title: string;
@@ -106,13 +111,13 @@ You will be given, in order:
 Critical rule: a free calendar window is NOT automatically a usable training slot. Judge each window against the context document's logistics, buffer, location, and fatigue rules before using it. If a window is only technically free but would be rushed, badly located, or stacked against fatigue/injury risk, either avoid it, suggest a shorter/easier session instead, or clearly flag the risk in risk_warning.
 
 Quality over quantity:
-- Prefer 4-7 strong, realistic suggestions. Do not try to fill every free window.
+- You are suggesting the athlete's NEXT few workouts, not a full week. Return only ${MIN_SUGGESTIONS} to ${MAX_SUGGESTIONS} suggestions — a small, high-quality batch, never an attempt to fill every free window.
 - Every suggestion must map to a specific item in the context document's current training-plan week (use today's date to determine which week). Put this in plan_reference, e.g. "Week 3 Bike A". If a suggestion does not map to a specific plan item, it must be clearly labelled optional in plan_reference along with why (e.g. "Optional — easy recovery spin, legs fresh").
 - Do not invent generic extra workouts beyond the plan unless explicitly labelled optional as above.
 
 No overlaps, ever:
 - No suggested workout may overlap another suggested workout you return.
-- No suggested workout may overlap a Google Calendar event or an existing planned/accepted training event (the free windows already exclude these with a buffer — stay strictly inside a window).
+- No suggested workout may overlap a Google Calendar event or an existing planned/accepted training event — these are fixed commitments already excluded from the free windows below with a buffer. Stay strictly inside a window.
 - Every session's start_time and end_time must fall entirely within one of the provided free windows.
 
 Daily limits:
@@ -283,9 +288,12 @@ function removeOverlappingSuggestions(
  * Enforces: at most one session per discipline per day, at most one main
  * session (Swim/Bike/Run/Brick) on a weekday, at most two on a weekend.
  * Operates chronologically so earlier-in-the-day sessions are kept first.
+ * Seeded with already-accepted plan_events so new suggestions plan around
+ * them (e.g. won't add a second same-day Run on top of an accepted one).
  */
 function enforceDailyLimits(
-  suggestions: TriathlonSuggestion[]
+  suggestions: TriathlonSuggestion[],
+  existingWorkouts: ExistingWorkout[] = []
 ): TriathlonSuggestion[] {
   const sorted = [...suggestions].sort(
     (a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
@@ -293,6 +301,18 @@ function enforceDailyLimits(
 
   const typesUsedByDay = new Map<string, Set<string>>();
   const mainCountByDay = new Map<string, number>();
+
+  for (const w of existingWorkouts) {
+    if (!w.type) continue;
+    const dateKey = toDateKey(new Date(w.start_time));
+    const typesUsed = typesUsedByDay.get(dateKey) ?? new Set<string>();
+    typesUsed.add(w.type);
+    typesUsedByDay.set(dateKey, typesUsed);
+    if (MAIN_TYPES.has(w.type)) {
+      mainCountByDay.set(dateKey, (mainCountByDay.get(dateKey) ?? 0) + 1);
+    }
+  }
+
   const kept: TriathlonSuggestion[] = [];
 
   for (const s of sorted) {
@@ -320,7 +340,8 @@ function enforceDailyLimits(
 
 export function validateSuggestions(
   raw: unknown,
-  freeWindows: FreeWindow[]
+  freeWindows: FreeWindow[],
+  existingWorkouts: ExistingWorkout[] = []
 ): TriathlonSuggestion[] {
   if (
     !raw ||
@@ -338,7 +359,7 @@ export function validateSuggestions(
     .filter(passesBikeRealism);
 
   const nonOverlapping = removeOverlappingSuggestions(valid);
-  const withinDailyLimits = enforceDailyLimits(nonOverlapping)
+  const withinDailyLimits = enforceDailyLimits(nonOverlapping, existingWorkouts)
     .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
     .slice(0, MAX_SUGGESTIONS);
 
@@ -355,11 +376,13 @@ export async function generateTriathlonSuggestions({
   preferences,
   freeWindows,
   athleteContext,
+  existingWorkouts = [],
   today = new Date(),
 }: {
   preferences: UserPreferences | null;
   freeWindows: FreeWindow[];
   athleteContext: string | null;
+  existingWorkouts?: ExistingWorkout[];
   today?: Date;
 }): Promise<TriathlonSuggestion[]> {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -401,5 +424,5 @@ export async function generateTriathlonSuggestions({
     throw new Error("Model returned invalid JSON.");
   }
 
-  return validateSuggestions(parsed, freeWindows);
+  return validateSuggestions(parsed, freeWindows, existingWorkouts);
 }

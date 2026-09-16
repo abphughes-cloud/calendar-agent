@@ -88,6 +88,10 @@ export async function POST() {
       preferences: (preferences as UserPreferences | null) ?? null,
       freeWindows,
       athleteContext,
+      existingWorkouts: (planEventsData ?? []).map((e) => ({
+        type: e.type as string | null,
+        start_time: e.start_time as string,
+      })),
       today: now,
     });
   } catch (error) {
@@ -96,6 +100,20 @@ export async function POST() {
       { error: "Could not generate suggestions right now. Please try again." },
       { status: 502 }
     );
+  }
+
+  // Replace, don't accumulate: clear old pending suggestions in this same
+  // generation window right before inserting the fresh batch. Only reached
+  // after generation succeeds, so a failed call never destroys the old ones.
+  const { error: clearError } = await supabase
+    .from("agent_suggestions")
+    .delete()
+    .eq("status", "pending")
+    .gte("start_time", rangeStart.toISOString())
+    .lt("start_time", rangeEnd.toISOString());
+
+  if (clearError) {
+    console.error("[Agent] Failed to clear old pending suggestions", clearError);
   }
 
   const rows = suggestions.map((s) => ({ ...s, status: "pending" }));
@@ -113,5 +131,8 @@ export async function POST() {
     );
   }
 
-  return NextResponse.json({ suggestions: saved ?? [] });
+  return NextResponse.json({
+    suggestions: saved ?? [],
+    range: { start: rangeStart.toISOString(), end: rangeEnd.toISOString() },
+  });
 }
