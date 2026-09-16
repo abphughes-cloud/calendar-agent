@@ -136,7 +136,7 @@ export default function PlanEventForm({
 
       <button
         type="submit"
-        className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
+        className="rounded-md bg-blue-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
       >
         {submitLabel}
       </button>

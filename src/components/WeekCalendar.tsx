@@ -12,6 +12,7 @@ import EventDetailModal from "@/components/EventDetailModal";
 import PlanEventBlock from "@/components/PlanEventBlock";
 import PlanEventModal from "@/components/PlanEventModal";
 import SuggestionBlock from "@/components/SuggestionBlock";
+import SuggestionDetailModal from "@/components/SuggestionDetailModal";
 
 const START_HOUR = 6;
 const END_HOUR = 23;
@@ -50,7 +51,7 @@ function planBlockPosition(event: PlanEvent) {
   return computeBlockPosition(event.start_time, event.end_time);
 }
 
-const SUGGESTION_MIN_HEIGHT = 92;
+const SUGGESTION_MIN_HEIGHT = 40;
 
 function suggestionBlockPosition(suggestion: AgentSuggestion) {
   if (!suggestion.start_time) {
@@ -89,17 +90,13 @@ export default function WeekCalendar({
   events,
   planEvents,
   suggestions,
-  busySuggestionId,
-  onAcceptSuggestion,
-  onRejectSuggestion,
+  onSuggestionRemoved,
 }: {
   weekStart: Date;
   events: CategorizedEvent[];
   planEvents: PlanEvent[];
   suggestions: AgentSuggestion[];
-  busySuggestionId: string | null;
-  onAcceptSuggestion: (suggestion: AgentSuggestion) => void;
-  onRejectSuggestion: (id: string) => void;
+  onSuggestionRemoved: (id: string) => void;
 }) {
   const [selectedEvent, setSelectedEvent] = useState<CategorizedEvent | null>(
     null
@@ -107,6 +104,8 @@ export default function WeekCalendar({
   const [selectedPlanEvent, setSelectedPlanEvent] = useState<PlanEvent | null>(
     null
   );
+  const [selectedSuggestion, setSelectedSuggestion] =
+    useState<AgentSuggestion | null>(null);
 
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const todayKey = toDateKey(new Date());
@@ -338,9 +337,7 @@ export default function WeekCalendar({
                         left={`calc(${(column / columnCount) * 100}% + 1px)`}
                         width={`calc(${100 / columnCount}% - 2px)`}
                         conflict={suggestionConflicts(event, events, planEvents)}
-                        busy={busySuggestionId === event.id}
-                        onAccept={onAcceptSuggestion}
-                        onReject={onRejectSuggestion}
+                        onSelect={setSelectedSuggestion}
                       />
                     );
                   })}
@@ -358,6 +355,17 @@ export default function WeekCalendar({
       <PlanEventModal
         event={selectedPlanEvent}
         onClose={() => setSelectedPlanEvent(null)}
+      />
+      <SuggestionDetailModal
+        key={selectedSuggestion?.id ?? "none"}
+        suggestion={selectedSuggestion}
+        conflict={
+          selectedSuggestion
+            ? suggestionConflicts(selectedSuggestion, events, planEvents)
+            : false
+        }
+        onClose={() => setSelectedSuggestion(null)}
+        onRemoved={onSuggestionRemoved}
       />
     </div>
   );

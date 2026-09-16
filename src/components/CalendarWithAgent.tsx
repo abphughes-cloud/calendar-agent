@@ -1,12 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import type { CategorizedEvent } from "@/lib/category";
 import type { AgentSuggestion, PlanEvent } from "@/lib/planning";
-import { acceptSuggestion, rejectSuggestion } from "@/app/agent/actions";
 import WeekCalendar from "@/components/WeekCalendar";
-import AgentPanel from "@/components/AgentPanel";
 
 export default function CalendarWithAgent({
   weekStart,
@@ -19,71 +16,72 @@ export default function CalendarWithAgent({
   planEvents: PlanEvent[];
   initialSuggestions: AgentSuggestion[];
 }) {
-  const router = useRouter();
   const [suggestions, setSuggestions] =
     useState<AgentSuggestion[]>(initialSuggestions);
-  const [busyId, setBusyId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
 
-  function handleSuggestionsAdded(newOnes: AgentSuggestion[]) {
-    setSuggestions((prev) => [...newOnes, ...prev]);
-  }
-
-  async function handleAccept(suggestion: AgentSuggestion) {
-    setBusyId(suggestion.id);
+  async function handleSuggest() {
+    setLoading(true);
     setErrorMessage(null);
+    setInfoMessage(null);
     try {
-      await acceptSuggestion(suggestion);
-      setSuggestions((prev) => prev.filter((s) => s.id !== suggestion.id));
-      router.refresh();
+      const res = await fetch("/api/agent/triathlon/suggest", {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || "Could not generate suggestions.");
+      }
+      if (Array.isArray(data.suggestions) && data.suggestions.length > 0) {
+        setSuggestions((prev) => [...data.suggestions, ...prev]);
+      } else if (data.message) {
+        setInfoMessage(data.message);
+      }
     } catch (error) {
       setErrorMessage(
-        error instanceof Error ? error.message : "Could not accept suggestion."
+        error instanceof Error ? error.message : "Something went wrong."
       );
     } finally {
-      setBusyId(null);
+      setLoading(false);
     }
   }
 
-  async function handleReject(id: string, feedbackText?: string) {
-    setBusyId(id);
-    setErrorMessage(null);
-    try {
-      await rejectSuggestion(id, feedbackText);
-      setSuggestions((prev) => prev.filter((s) => s.id !== id));
-      router.refresh();
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : "Could not reject suggestion."
-      );
-    } finally {
-      setBusyId(null);
-    }
+  function removeSuggestion(id: string) {
+    setSuggestions((prev) => prev.filter((s) => s.id !== id));
   }
 
   return (
-    <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-      <div className="min-w-0 flex-1">
-        <WeekCalendar
-          weekStart={weekStart}
-          events={events}
-          planEvents={planEvents}
-          suggestions={suggestions}
-          busySuggestionId={busyId}
-          onAcceptSuggestion={handleAccept}
-          onRejectSuggestion={(id) => handleReject(id)}
-        />
+    <div>
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          onClick={handleSuggest}
+          disabled={loading}
+          className="rounded-md bg-blue-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {loading ? "Thinking…" : "Suggest triathlon week"}
+        </button>
+        {errorMessage && (
+          <p className="rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs text-red-700">
+            {errorMessage}
+          </p>
+        )}
+        {infoMessage && (
+          <p className="rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs text-gray-600">
+            {infoMessage}
+          </p>
+        )}
       </div>
-      <div className="lg:w-80 lg:flex-shrink-0">
-        <AgentPanel
-          suggestions={suggestions}
-          onSuggestionsAdded={handleSuggestionsAdded}
-          busyId={busyId}
-          errorMessage={errorMessage}
-          onAccept={handleAccept}
-          onReject={handleReject}
-        />
-      </div>
+
+      <WeekCalendar
+        weekStart={weekStart}
+        events={events}
+        planEvents={planEvents}
+        suggestions={suggestions}
+        onSuggestionRemoved={removeSuggestion}
+      />
     </div>
   );
 }

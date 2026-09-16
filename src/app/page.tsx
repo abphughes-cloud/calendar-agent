@@ -29,7 +29,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
           >
             <button
               type="submit"
-              className="w-full rounded-md bg-gray-900 px-4 py-2 font-medium text-white transition hover:bg-gray-800"
+              className="w-full rounded-md bg-blue-800 px-4 py-2 font-medium text-white transition hover:bg-blue-700"
             >
               Sign in with Google
             </button>
@@ -119,7 +119,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   }
 
   return (
-    <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8">
+    <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
       <header className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">
