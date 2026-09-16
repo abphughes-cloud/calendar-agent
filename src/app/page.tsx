@@ -5,8 +5,7 @@ import { withCategory } from "@/lib/category";
 import { addDays, parseDateKey, startOfWeek } from "@/lib/week";
 import type { AgentSuggestion, PlanEvent } from "@/lib/planning";
 import { createClient } from "@/utils/supabase/server";
-import WeekCalendar from "@/components/WeekCalendar";
-import AgentPanel from "@/components/AgentPanel";
+import CalendarWithAgent from "@/components/CalendarWithAgent";
 import CalendarDebugPanel from "@/components/CalendarDebugPanel";
 
 export default async function Home({ searchParams }: PageProps<"/">) {
@@ -165,18 +164,12 @@ export default async function Home({ searchParams }: PageProps<"/">) {
           )}
         </div>
       ) : (
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-          <div className="min-w-0 flex-1">
-            <WeekCalendar
-              weekStart={weekStart}
-              events={events}
-              planEvents={planEvents}
-            />
-          </div>
-          <div className="lg:w-80 lg:flex-shrink-0">
-            <AgentPanel initialSuggestions={suggestions} />
-          </div>
-        </div>
+        <CalendarWithAgent
+          weekStart={weekStart}
+          events={events}
+          planEvents={planEvents}
+          initialSuggestions={suggestions}
+        />
       )}
 
       {result && (

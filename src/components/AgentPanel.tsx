@@ -2,9 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import type { AgentSuggestion } from "@/lib/planning";
-import { acceptSuggestion, rejectSuggestion } from "@/app/agent/actions";
 import { formatTime } from "@/lib/date";
 
 function formatSuggestionDate(iso: string): string {
@@ -16,23 +14,29 @@ function formatSuggestionDate(iso: string): string {
 }
 
 export default function AgentPanel({
-  initialSuggestions,
+  suggestions,
+  onSuggestionsAdded,
+  busyId,
+  errorMessage,
+  onAccept,
+  onReject,
 }: {
-  initialSuggestions: AgentSuggestion[];
+  suggestions: AgentSuggestion[];
+  onSuggestionsAdded: (suggestions: AgentSuggestion[]) => void;
+  busyId: string | null;
+  errorMessage: string | null;
+  onAccept: (suggestion: AgentSuggestion) => void;
+  onReject: (id: string, feedbackText?: string) => void;
 }) {
-  const router = useRouter();
-  const [suggestions, setSuggestions] =
-    useState<AgentSuggestion[]>(initialSuggestions);
   const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
-  const [busyId, setBusyId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectFeedback, setRejectFeedback] = useState("");
 
   async function handleSuggest() {
     setLoading(true);
-    setErrorMessage(null);
+    setFetchError(null);
     setInfoMessage(null);
     try {
       const res = await fetch("/api/agent/triathlon/suggest", {
@@ -43,12 +47,12 @@ export default function AgentPanel({
         throw new Error(data?.error || "Could not generate suggestions.");
       }
       if (Array.isArray(data.suggestions) && data.suggestions.length > 0) {
-        setSuggestions((prev) => [...data.suggestions, ...prev]);
+        onSuggestionsAdded(data.suggestions);
       } else if (data.message) {
         setInfoMessage(data.message);
       }
     } catch (error) {
-      setErrorMessage(
+      setFetchError(
         error instanceof Error ? error.message : "Something went wrong."
       );
     } finally {
@@ -56,38 +60,10 @@ export default function AgentPanel({
     }
   }
 
-  async function handleAccept(suggestion: AgentSuggestion) {
-    setBusyId(suggestion.id);
-    setErrorMessage(null);
-    try {
-      await acceptSuggestion(suggestion);
-      setSuggestions((prev) => prev.filter((s) => s.id !== suggestion.id));
-      router.refresh();
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : "Could not accept suggestion."
-      );
-    } finally {
-      setBusyId(null);
-    }
-  }
-
-  async function handleConfirmReject(id: string) {
-    setBusyId(id);
-    setErrorMessage(null);
-    try {
-      await rejectSuggestion(id, rejectFeedback);
-      setSuggestions((prev) => prev.filter((s) => s.id !== id));
-      setRejectingId(null);
-      setRejectFeedback("");
-      router.refresh();
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : "Could not reject suggestion."
-      );
-    } finally {
-      setBusyId(null);
-    }
+  function handleConfirmReject(id: string) {
+    onReject(id, rejectFeedback);
+    setRejectingId(null);
+    setRejectFeedback("");
   }
 
   return (
@@ -100,14 +76,14 @@ export default function AgentPanel({
         type="button"
         onClick={handleSuggest}
         disabled={loading}
-        className="w-full rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+        className="w-full rounded-md bg-blue-800 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading ? "Thinking…" : "Suggest triathlon week"}
       </button>
 
-      {errorMessage && (
+      {(fetchError || errorMessage) && (
         <p className="mt-2 rounded-md border border-red-200 bg-red-50 p-2 text-xs text-red-700">
-          {errorMessage}
+          {fetchError || errorMessage}
         </p>
       )}
       {infoMessage && (
@@ -126,12 +102,12 @@ export default function AgentPanel({
           suggestions.map((s) => (
             <div
               key={s.id}
-              className="rounded-md border border-gray-200 p-3 text-sm"
+              className="rounded-md border border-dashed border-blue-300 bg-blue-50 p-3 text-sm"
             >
               <div className="mb-1 flex items-start justify-between gap-2">
                 <span className="font-semibold text-gray-900">{s.title}</span>
                 {s.type && (
-                  <span className="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-indigo-600">
+                  <span className="shrink-0 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-blue-700">
                     {s.type}
                   </span>
                 )}
@@ -171,7 +147,7 @@ export default function AgentPanel({
                       type="button"
                       onClick={() => handleConfirmReject(s.id)}
                       disabled={busyId === s.id}
-                      className="rounded-md border border-red-200 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
+                      className="rounded-md border border-red-300 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
                     >
                       Confirm reject
                     </button>
@@ -191,9 +167,9 @@ export default function AgentPanel({
                 <div className="mt-2 flex flex-wrap gap-2">
                   <button
                     type="button"
-                    onClick={() => handleAccept(s)}
+                    onClick={() => onAccept(s)}
                     disabled={busyId === s.id}
-                    className="rounded-md bg-gray-900 px-2 py-1 text-xs font-medium text-white hover:bg-gray-800 disabled:opacity-60"
+                    className="rounded-md bg-blue-800 px-2 py-1 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-60"
                   >
                     Accept
                   </button>
@@ -206,7 +182,8 @@ export default function AgentPanel({
                   <button
                     type="button"
                     onClick={() => setRejectingId(s.id)}
-                    className="rounded-md border border-gray-300 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                    disabled={busyId === s.id}
+                    className="rounded-md border border-red-300 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
                   >
                     Reject
                   </button>

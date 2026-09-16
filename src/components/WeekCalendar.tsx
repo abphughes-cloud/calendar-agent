@@ -4,13 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import type { CategorizedEvent } from "@/lib/category";
 import { ALL_CATEGORIES, categoryStyle } from "@/lib/category";
-import type { PlanEvent } from "@/lib/planning";
+import type { AgentSuggestion, PlanEvent } from "@/lib/planning";
 import { layoutOverlaps } from "@/lib/layout";
 import { addDays, formatDayHeader, formatWeekRangeLabel, startOfWeek, toDateKey } from "@/lib/week";
 import EventBlock from "@/components/EventBlock";
 import EventDetailModal from "@/components/EventDetailModal";
 import PlanEventBlock from "@/components/PlanEventBlock";
 import PlanEventModal from "@/components/PlanEventModal";
+import SuggestionBlock from "@/components/SuggestionBlock";
 
 const START_HOUR = 6;
 const END_HOUR = 23;
@@ -49,14 +50,56 @@ function planBlockPosition(event: PlanEvent) {
   return computeBlockPosition(event.start_time, event.end_time);
 }
 
+const SUGGESTION_MIN_HEIGHT = 92;
+
+function suggestionBlockPosition(suggestion: AgentSuggestion) {
+  if (!suggestion.start_time) {
+    return { top: 0, height: SUGGESTION_MIN_HEIGHT };
+  }
+  const pos = computeBlockPosition(suggestion.start_time, suggestion.end_time);
+  return { ...pos, height: Math.max(pos.height, SUGGESTION_MIN_HEIGHT) };
+}
+
+function suggestionConflicts(
+  suggestion: AgentSuggestion,
+  events: CategorizedEvent[],
+  planEvents: PlanEvent[]
+): boolean {
+  if (!suggestion.start_time || !suggestion.end_time) return false;
+  const sStart = new Date(suggestion.start_time).getTime();
+  const sEnd = new Date(suggestion.end_time).getTime();
+
+  const overlapsGoogle = events.some((e) => {
+    if (e.isAllDay || !e.start) return false;
+    const eStart = new Date(e.start).getTime();
+    const eEnd = new Date(e.end ?? e.start).getTime();
+    return sStart < eEnd && sEnd > eStart;
+  });
+  if (overlapsGoogle) return true;
+
+  return planEvents.some((p) => {
+    const pStart = new Date(p.start_time).getTime();
+    const pEnd = new Date(p.end_time).getTime();
+    return sStart < pEnd && sEnd > pStart;
+  });
+}
+
 export default function WeekCalendar({
   weekStart,
   events,
   planEvents,
+  suggestions,
+  busySuggestionId,
+  onAcceptSuggestion,
+  onRejectSuggestion,
 }: {
   weekStart: Date;
   events: CategorizedEvent[];
   planEvents: PlanEvent[];
+  suggestions: AgentSuggestion[];
+  busySuggestionId: string | null;
+  onAcceptSuggestion: (suggestion: AgentSuggestion) => void;
+  onRejectSuggestion: (id: string) => void;
 }) {
   const [selectedEvent, setSelectedEvent] = useState<CategorizedEvent | null>(
     null
@@ -83,6 +126,15 @@ export default function WeekCalendar({
     const list = planEventsByDay.get(key) ?? [];
     list.push(event);
     planEventsByDay.set(key, list);
+  }
+
+  const suggestionsByDay = new Map<string, AgentSuggestion[]>();
+  for (const suggestion of suggestions) {
+    if (!suggestion.start_time) continue;
+    const key = toDateKey(new Date(suggestion.start_time));
+    const list = suggestionsByDay.get(key) ?? [];
+    list.push(suggestion);
+    suggestionsByDay.set(key, list);
   }
 
   const hours = Array.from(
@@ -117,7 +169,7 @@ export default function WeekCalendar({
         <div className="flex items-center gap-2">
           <Link
             href="/plan/new"
-            className="rounded-md border border-indigo-300 bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-700 hover:bg-indigo-100"
+            className="rounded-md border border-blue-300 bg-blue-100 px-3 py-1.5 text-sm font-medium text-blue-800 hover:bg-blue-200"
           >
             + Add plan event
           </Link>
@@ -140,8 +192,16 @@ export default function WeekCalendar({
           </div>
         ))}
         <div className="flex items-center gap-1.5">
-          <span className="inline-block h-2.5 w-2.5 rounded-full border-2 border-dashed border-indigo-400 bg-indigo-50" />
+          <span className="inline-block h-2.5 w-2.5 rounded-full bg-blue-800" />
           <span className="text-xs text-gray-500">Plan (not on Google)</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-full border-2 border-dashed border-blue-700 bg-blue-100" />
+          <span className="text-xs text-gray-500">Suggested</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-full border-2 border-dashed border-red-600 bg-red-50" />
+          <span className="text-xs text-gray-500">Suggested · Conflict</span>
         </div>
       </div>
 
@@ -169,6 +229,7 @@ export default function WeekCalendar({
             const allDayEvents = dayEvents.filter((e) => e.isAllDay);
             const timedEvents = dayEvents.filter((e) => !e.isAllDay);
             const dayPlanEvents = planEventsByDay.get(dayKey) ?? [];
+            const daySuggestions = suggestionsByDay.get(dayKey) ?? [];
 
             const laidOut = layoutOverlaps(
               timedEvents,
@@ -180,6 +241,12 @@ export default function WeekCalendar({
               dayPlanEvents,
               (e) => new Date(e.start_time).getTime(),
               (e) => new Date(e.end_time).getTime()
+            );
+
+            const laidOutSuggestions = layoutOverlaps(
+              daySuggestions,
+              (e) => new Date(e.start_time as string).getTime(),
+              (e) => new Date(e.end_time as string).getTime()
             );
 
             return (
@@ -256,6 +323,24 @@ export default function WeekCalendar({
                         left={`calc(${(column / columnCount) * 100}% + 1px)`}
                         width={`calc(${100 / columnCount}% - 2px)`}
                         onSelect={setSelectedPlanEvent}
+                      />
+                    );
+                  })}
+
+                  {laidOutSuggestions.map(({ event, column, columnCount }) => {
+                    const { top, height } = suggestionBlockPosition(event);
+                    return (
+                      <SuggestionBlock
+                        key={event.id}
+                        suggestion={event}
+                        top={top}
+                        height={height}
+                        left={`calc(${(column / columnCount) * 100}% + 1px)`}
+                        width={`calc(${100 / columnCount}% - 2px)`}
+                        conflict={suggestionConflicts(event, events, planEvents)}
+                        busy={busySuggestionId === event.id}
+                        onAccept={onAcceptSuggestion}
+                        onReject={onRejectSuggestion}
                       />
                     );
                   })}
