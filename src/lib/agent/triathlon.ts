@@ -58,18 +58,25 @@ const SUGGESTIONS_SCHEMA = {
   additionalProperties: false,
 } as const;
 
-const SYSTEM_PROMPT = `You are a triathlon training planning assistant. Given an athlete's preferences and their free time windows for the next 7 days, propose 4 to 6 specific training sessions.
+const SYSTEM_PROMPT = `You are a triathlon training planning assistant, acting as a calendar-aware personal coach.
+
+You will be given, in order:
+1. The athlete's saved preferences (race goal, weekly hours, etc.).
+2. An athlete training context document, if one is available. When present, treat it as the authoritative source of truth for this athlete's logistics, locations, commute, injury constraints, race plan, and coaching rules — it takes priority over generic training advice below.
+3. A list of free time windows computed from the athlete's actual calendar (Google Calendar events plus already-planned training sessions already excluded).
+
+Critical rule: a free calendar window is NOT automatically a usable training slot. Before placing a session in a window, judge it against the context document's logistics, buffer, location, and fatigue rules (commute time, shower/change buffers, travel between locations, proximity to other commitments, recent/upcoming fatigue). If a window is only technically free but would be rushed, badly located, or stacked against fatigue or injury risk, either avoid it, suggest a shorter/easier session instead, or clearly flag the risk in the reason rather than silently ignoring it.
 
 Rules:
 - Every session's start_time and end_time must fall entirely within one of the provided free windows (copy the window's start/end or use a sub-range inside it).
 - type must be one of: Swim, Bike, Run, Strength.
 - intensity must be one of: Low, Medium, High.
-- Balance the four disciplines across the week rather than repeating one type.
+- Balance the four disciplines across the week rather than repeating one type, following the context document's weekly targets and priority order if provided.
 - Never schedule two High intensity sessions on back-to-back days — leave recovery time between hard sessions, and prefer Low intensity or rest the day after a High intensity session.
-- Respect the athlete's preferred/avoid training times and location notes where possible.
-- Take the athlete's recovery notes (e.g. injuries) into account when choosing intensity and type.
+- Respect the athlete's preferred/avoid training times, location notes, and (if provided) the context document's detailed location/logistics/social-fatigue rules.
+- Take the athlete's recovery notes and any injury guidance in the context document (e.g. a knee/IT band caution) into account when choosing intensity, type, and progression.
 - Each session should be a realistic duration for its type and intensity, typically 30-90 minutes.
-- Write a short, specific "reason" for each session referencing the athlete's goal, race date, or preferences.
+- The "reason" field for every session must be a concise rationale that covers: why this workout, why this time, key logistics/buffer assumptions, and any risk or conflict warning — in the spirit of the context document's example rationale/risk formats, if one is provided.
 - start_time and end_time must be valid ISO 8601 datetime strings.
 - Return between 4 and 6 suggestions.`;
 
@@ -100,9 +107,17 @@ function formatFreeWindows(freeWindows: FreeWindow[]): string {
 
 function buildUserPrompt(
   preferences: UserPreferences | null,
-  freeWindows: FreeWindow[]
+  freeWindows: FreeWindow[],
+  athleteContext: string | null
 ): string {
-  return `Athlete preferences:\n${formatPreferences(preferences)}\n\nFree time windows over the next 7 days (only schedule sessions fully inside one of these):\n${formatFreeWindows(freeWindows)}`;
+  const sections = [
+    `Athlete preferences (saved settings):\n${formatPreferences(preferences)}`,
+    athleteContext
+      ? `Athlete training context document (authoritative — use this for logistics, location, fatigue, injury, and race-plan judgment):\n\n${athleteContext}`
+      : "No athlete training context document is available for this request — use the saved preferences above and general triathlon coaching judgment only.",
+    `Free time windows over the next 7 days (candidate slots only — do not treat every window as automatically usable; judge each against the context document's logistics/fatigue rules before using it):\n${formatFreeWindows(freeWindows)}`,
+  ];
+  return sections.join("\n\n---\n\n");
 }
 
 function isValidSuggestion(value: unknown): value is TriathlonSuggestion {
@@ -170,9 +185,11 @@ export function validateSuggestions(
 export async function generateTriathlonSuggestions({
   preferences,
   freeWindows,
+  athleteContext,
 }: {
   preferences: UserPreferences | null;
   freeWindows: FreeWindow[];
+  athleteContext: string | null;
 }): Promise<TriathlonSuggestion[]> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
@@ -186,7 +203,10 @@ export async function generateTriathlonSuggestions({
     temperature: 0.5,
     messages: [
       { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: buildUserPrompt(preferences, freeWindows) },
+      {
+        role: "user",
+        content: buildUserPrompt(preferences, freeWindows, athleteContext),
+      },
     ],
     response_format: {
       type: "json_schema",

@@ -4,6 +4,7 @@ import { CalendarApiError, fetchUpcomingEvents } from "@/lib/calendar";
 import { createClient } from "@/utils/supabase/server";
 import { computeFreeWindows, type BusyInterval } from "@/lib/freeWindows";
 import { generateTriathlonSuggestions } from "@/lib/agent/triathlon";
+import { loadAthleteContext } from "@/lib/agent/context";
 import { addDays } from "@/lib/week";
 import type { UserPreferences } from "@/lib/planning";
 
@@ -79,11 +80,14 @@ export async function POST() {
     });
   }
 
+  const athleteContext = await loadAthleteContext();
+
   let suggestions;
   try {
     suggestions = await generateTriathlonSuggestions({
       preferences: (preferences as UserPreferences | null) ?? null,
       freeWindows,
+      athleteContext,
     });
   } catch (error) {
     console.error("[Agent] Failed to generate suggestions", error);
