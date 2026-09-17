@@ -1,0 +1,162 @@
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import type { PlanEvent } from "@/lib/planning";
+import { deletePlanEvent } from "@/app/plan/actions";
+import { formatTime } from "@/lib/date";
+
+function formatFullDateTime(event: PlanEvent): string {
+  const start = new Date(event.start_time);
+  const dateLabel = start.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+  return `${dateLabel} · ${formatTime(event.start_time)} – ${formatTime(
+    event.end_time
+  )}`;
+}
+
+export default function PlanEventModal({
+  event,
+  onClose,
+}: {
+  event: PlanEvent | null;
+  onClose: () => void;
+}) {
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!event) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [event, onClose]);
+
+  if (!event) return null;
+
+  async function handleDelete() {
+    if (!event) return;
+    if (!window.confirm(`Delete "${event.title}"?`)) return;
+    await deletePlanEvent(event.id);
+    onClose();
+    router.refresh();
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={event.title}
+        className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-2xl border border-slate-100 bg-white p-5 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-blue-700">
+            Plan · {event.type ?? "Other"}
+          </span>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+          >
+            ✕
+          </button>
+        </div>
+
+        <h2 className="mb-2 text-lg font-semibold text-slate-900">
+          {event.title}
+        </h2>
+
+        <p className="mb-2 text-sm text-slate-600">
+          {formatFullDateTime(event)}
+        </p>
+
+        {event.location && (
+          <p className="mb-2 text-sm text-slate-600">
+            <span className="font-medium text-slate-500">Location: </span>
+            {event.location}
+          </p>
+        )}
+
+        <p className="mb-2 text-sm text-slate-600">
+          <span className="font-medium text-slate-500">Status: </span>
+          {event.status}
+        </p>
+
+        {event.intensity && (
+          <p className="mb-2 text-sm text-slate-600">
+            <span className="font-medium text-slate-500">Intensity: </span>
+            {event.intensity}
+          </p>
+        )}
+        {event.distance && (
+          <p className="mb-2 text-sm text-slate-600">
+            <span className="font-medium text-slate-500">Distance: </span>
+            {event.distance}
+          </p>
+        )}
+        {event.pace_or_effort && (
+          <p className="mb-2 text-sm text-slate-600">
+            <span className="font-medium text-slate-500">Target pace/effort: </span>
+            {event.pace_or_effort}
+          </p>
+        )}
+        {event.plan_reference && (
+          <p className="mb-2 text-sm text-slate-600">
+            <span className="font-medium text-slate-500">Training plan: </span>
+            {event.plan_reference}
+          </p>
+        )}
+
+        {event.structure && (
+          <div className="mt-3 border-t border-slate-100 pt-3">
+            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-400">
+              Session structure
+            </p>
+            <p className="whitespace-pre-wrap text-sm text-slate-700">
+              {event.structure}
+            </p>
+          </div>
+        )}
+
+        {event.notes && (
+          <div className="mt-3 border-t border-slate-100 pt-3">
+            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-400">
+              Notes
+            </p>
+            <p className="whitespace-pre-wrap text-sm text-slate-700">
+              {event.notes}
+            </p>
+          </div>
+        )}
+
+        <div className="mt-4 flex items-center gap-3 border-t border-slate-100 pt-3">
+          <Link
+            href={`/plan/${event.id}/edit`}
+            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Edit
+          </Link>
+          <button
+            type="button"
+            onClick={handleDelete}
+            className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

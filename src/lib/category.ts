@@ -39,8 +39,8 @@ const CATEGORY_STYLES: Record<EventCategory, CategoryStyle> = {
   },
   Holiday: {
     category: "Holiday",
-    colorClass: "bg-gray-200 border-gray-500 text-gray-900",
-    dotClass: "bg-gray-500",
+    colorClass: "bg-slate-200 border-slate-500 text-slate-900",
+    dotClass: "bg-slate-500",
   },
   Other: {
     category: "Other",

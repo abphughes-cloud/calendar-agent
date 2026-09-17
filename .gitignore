@@ -37,6 +37,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# personal athlete training context (local only, never committed)
+/context/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
