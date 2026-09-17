@@ -40,7 +40,7 @@ export default function EventBlock({
       type="button"
       title={tooltip}
       onClick={() => onSelect(event)}
-      className={`absolute cursor-pointer overflow-hidden rounded-md border-l-4 px-1.5 py-0.5 text-left shadow-sm transition hover:brightness-95 ${event.colorClass}`}
+      className={`absolute cursor-pointer overflow-hidden rounded-lg border-l-4 px-1.5 py-0.5 text-left shadow-sm transition hover:brightness-95 ${event.colorClass}`}
       style={{ top, height, left, width }}
     >
       <p

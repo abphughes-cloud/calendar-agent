@@ -37,7 +37,7 @@ export default function PlanEventBlock({
       type="button"
       title={tooltip}
       onClick={() => onSelect(event)}
-      className="absolute cursor-pointer overflow-hidden rounded-md bg-blue-800 px-1.5 py-0.5 text-left text-white shadow-sm transition hover:bg-blue-700"
+      className="absolute cursor-pointer overflow-hidden rounded-lg bg-blue-600 px-1.5 py-0.5 text-left text-white shadow-sm transition hover:bg-blue-700"
       style={{ top, height, left, width }}
     >
       <p

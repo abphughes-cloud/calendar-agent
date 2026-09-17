@@ -16,10 +16,10 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     return (
       <main className="flex flex-1 items-center justify-center p-8">
         <div className="w-full max-w-sm space-y-4 text-center">
-          <h1 className="text-2xl font-semibold text-gray-900">
+          <h1 className="text-2xl font-semibold text-slate-900">
             Calendar Planner
           </h1>
-          <p className="text-gray-500">
+          <p className="text-slate-500">
             Sign in with Google to see your week as a calendar grid.
           </p>
           <form
@@ -30,7 +30,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
           >
             <button
               type="submit"
-              className="w-full rounded-md bg-blue-800 px-4 py-2 font-medium text-white transition hover:bg-blue-700"
+              className="w-full rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition hover:bg-blue-700"
             >
               Sign in with Google
             </button>
@@ -134,11 +134,11 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
       <header className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">
+          <h1 className="text-2xl font-semibold text-slate-900">
             Calendar Planner
           </h1>
           {session.user?.email && (
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-slate-500">
               Signed in as {session.user.email}
             </p>
           )}
@@ -146,7 +146,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         <div className="flex items-center gap-2">
           <Link
             href="/preferences"
-            className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
           >
             Preferences
           </Link>
@@ -158,7 +158,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
           >
             <button
               type="submit"
-              className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+              className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
             >
               Sign out
             </button>

@@ -6,8 +6,8 @@ import {
 } from "@/lib/planning";
 
 const INPUT_CLASS =
-  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none";
-const LABEL_CLASS = "mb-1 block text-sm font-medium text-gray-700";
+  "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none";
+const LABEL_CLASS = "mb-1 block text-sm font-medium text-slate-700";
 
 function toLocalInputValue(iso: string): string {
   const d = new Date(iso);
@@ -157,7 +157,7 @@ export default function PlanEventForm({
 
       <button
         type="submit"
-        className="rounded-md bg-blue-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
+        className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
       >
         {submitLabel}
       </button>

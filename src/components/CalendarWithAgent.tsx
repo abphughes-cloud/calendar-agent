@@ -130,7 +130,7 @@ export default function CalendarWithAgent({
           type="button"
           onClick={handleSuggest}
           disabled={loading || clearing}
-          className="rounded-md bg-blue-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading ? "Thinking…" : "Suggest next workouts"}
         </button>
@@ -138,22 +138,22 @@ export default function CalendarWithAgent({
           type="button"
           onClick={handleClearSuggestions}
           disabled={loading || clearing || suggestions.length === 0}
-          className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {clearing ? "Clearing…" : "Clear suggestions"}
         </button>
         {errorMessage && (
-          <p className="rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs text-red-700">
+          <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs text-red-700">
             {errorMessage}
           </p>
         )}
         {infoMessage && (
-          <p className="rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs text-gray-600">
+          <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-600">
             {infoMessage}
           </p>
         )}
         {showEmptyState && (
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-slate-400">
             No pending suggestions for this week.
           </p>
         )}

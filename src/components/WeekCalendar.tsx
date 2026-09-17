@@ -263,17 +263,17 @@ export default function WeekCalendar({
       <div className="mb-4 flex items-center justify-between gap-2">
         <Link
           href={prevWeekHref}
-          className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
           ← Prev
         </Link>
         <div className="flex items-center gap-3">
-          <h2 className="text-sm font-semibold text-gray-700">
+          <h2 className="text-sm font-semibold text-slate-700">
             {formatWeekRangeLabel(weekStart)}
           </h2>
           <Link
             href={todayHref}
-            className="text-xs font-medium text-gray-400 underline hover:text-gray-600"
+            className="text-xs font-medium text-slate-400 underline hover:text-slate-600"
           >
             Today
           </Link>
@@ -281,13 +281,13 @@ export default function WeekCalendar({
         <div className="flex items-center gap-2">
           <Link
             href="/plan/new"
-            className="rounded-md border border-blue-300 bg-blue-100 px-3 py-1.5 text-sm font-medium text-blue-800 hover:bg-blue-200"
+            className="rounded-lg border border-blue-300 bg-blue-100 px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-200"
           >
             + Add plan event
           </Link>
           <Link
             href={nextWeekHref}
-            className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
             Next →
           </Link>
@@ -300,31 +300,31 @@ export default function WeekCalendar({
             <span
               className={`inline-block h-2.5 w-2.5 rounded-full ${categoryStyle(category).dotClass}`}
             />
-            <span className="text-xs text-gray-500">{category}</span>
+            <span className="text-xs text-slate-500">{category}</span>
           </div>
         ))}
         <div className="flex items-center gap-1.5">
-          <span className="inline-block h-2.5 w-2.5 rounded-full bg-blue-800" />
-          <span className="text-xs text-gray-500">Plan (not on Google)</span>
+          <span className="inline-block h-2.5 w-2.5 rounded-full bg-blue-600" />
+          <span className="text-xs text-slate-500">Plan (not on Google)</span>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="inline-block h-2.5 w-2.5 rounded-full border-2 border-dashed border-blue-700 bg-blue-100" />
-          <span className="text-xs text-gray-500">Suggested</span>
+          <span className="text-xs text-slate-500">Suggested</span>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="inline-block h-2.5 w-2.5 rounded-full border-2 border-dashed border-red-600 bg-red-50" />
-          <span className="text-xs text-gray-500">Suggested · Conflict</span>
+          <span className="text-xs text-slate-500">Suggested · Conflict</span>
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
         <div className="flex">
           <div className="sticky left-0 z-10 w-12 flex-shrink-0 bg-white">
-            <div className="h-12 border-b border-gray-200" />
+            <div className="h-12 border-b border-slate-200" />
             {hours.map((hour) => (
               <div
                 key={hour}
-                className="border-t border-gray-100 pr-1 text-right text-[10px] text-gray-400"
+                className="border-t border-slate-100 pr-1 text-right text-[10px] text-slate-400"
                 style={{ height: HOUR_PX }}
               >
                 {new Date(2000, 0, 1, hour).toLocaleTimeString("en-US", {
@@ -365,18 +365,18 @@ export default function WeekCalendar({
             return (
               <div
                 key={dayKey}
-                className="flex-1 border-l border-gray-100"
+                className="flex-1 border-l border-slate-100"
                 style={{ minWidth: DAY_COLUMN_MIN_WIDTH }}
               >
-                <div className="flex h-12 flex-col items-center justify-center border-b border-gray-200">
-                  <span className="text-[10px] uppercase text-gray-400">
+                <div className="flex h-12 flex-col items-center justify-center border-b border-slate-200">
+                  <span className="text-[10px] uppercase text-slate-400">
                     {weekday}
                   </span>
                   <span
                     className={`text-sm font-semibold ${
                       dayKey === todayKey
-                        ? "flex h-5 w-5 items-center justify-center rounded-full bg-gray-900 text-white"
-                        : "text-gray-700"
+                        ? "flex h-5 w-5 items-center justify-center rounded-full bg-slate-900 text-white"
+                        : "text-slate-700"
                     }`}
                   >
                     {dayNum}
@@ -384,7 +384,7 @@ export default function WeekCalendar({
                 </div>
 
                 {allDayEvents.length > 0 && (
-                  <div className="space-y-0.5 border-b border-gray-100 p-1">
+                  <div className="space-y-0.5 border-b border-slate-100 p-1">
                     {allDayEvents.map((event) => (
                       <button
                         key={event.id}
@@ -417,7 +417,7 @@ export default function WeekCalendar({
                     {hours.map((hour) => (
                       <div
                         key={hour}
-                        className="absolute left-0 right-0 border-t border-gray-100"
+                        className="absolute left-0 right-0 border-t border-slate-100"
                         style={{ top: (hour - START_HOUR) * HOUR_PX }}
                       />
                     ))}

@@ -3,8 +3,8 @@ import { createClient } from "@/utils/supabase/server";
 import { savePreferences } from "./actions";
 
 const INPUT_CLASS =
-  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none";
-const LABEL_CLASS = "mb-1 block text-sm font-medium text-gray-700";
+  "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none";
+const LABEL_CLASS = "mb-1 block text-sm font-medium text-slate-700";
 
 export default async function PreferencesPage({
   searchParams,
@@ -23,19 +23,19 @@ export default async function PreferencesPage({
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-gray-900">
+        <h1 className="text-2xl font-semibold text-slate-900">
           Training Preferences
         </h1>
         <Link
           href="/"
-          className="text-sm font-medium text-gray-500 hover:text-gray-700"
+          className="text-sm font-medium text-slate-500 hover:text-slate-700"
         >
           ← Back to calendar
         </Link>
       </div>
 
       {saved === "1" && (
-        <div className="mb-4 rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+        <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
           Preferences saved.
         </div>
       )}
@@ -136,7 +136,7 @@ export default async function PreferencesPage({
 
         <button
           type="submit"
-          className="rounded-md bg-blue-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
+          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
         >
           Save preferences
         </button>

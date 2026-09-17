@@ -24,12 +24,12 @@ export default async function EditPlanEventPage({
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-gray-900">
+        <h1 className="text-2xl font-semibold text-slate-900">
           Edit plan event
         </h1>
         <Link
           href="/"
-          className="text-sm font-medium text-gray-500 hover:text-gray-700"
+          className="text-sm font-medium text-slate-500 hover:text-slate-700"
         >
           ← Back to calendar
         </Link>

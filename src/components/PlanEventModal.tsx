@@ -57,7 +57,7 @@ export default function PlanEventModal({
         role="dialog"
         aria-modal="true"
         aria-label={event.title}
-        className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-lg bg-white p-5 shadow-xl"
+        className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-2xl border border-slate-100 bg-white p-5 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex items-start justify-between gap-3">
@@ -68,90 +68,90 @@ export default function PlanEventModal({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
           >
             ✕
           </button>
         </div>
 
-        <h2 className="mb-2 text-lg font-semibold text-gray-900">
+        <h2 className="mb-2 text-lg font-semibold text-slate-900">
           {event.title}
         </h2>
 
-        <p className="mb-2 text-sm text-gray-600">
+        <p className="mb-2 text-sm text-slate-600">
           {formatFullDateTime(event)}
         </p>
 
         {event.location && (
-          <p className="mb-2 text-sm text-gray-600">
-            <span className="font-medium text-gray-500">Location: </span>
+          <p className="mb-2 text-sm text-slate-600">
+            <span className="font-medium text-slate-500">Location: </span>
             {event.location}
           </p>
         )}
 
-        <p className="mb-2 text-sm text-gray-600">
-          <span className="font-medium text-gray-500">Status: </span>
+        <p className="mb-2 text-sm text-slate-600">
+          <span className="font-medium text-slate-500">Status: </span>
           {event.status}
         </p>
 
         {event.intensity && (
-          <p className="mb-2 text-sm text-gray-600">
-            <span className="font-medium text-gray-500">Intensity: </span>
+          <p className="mb-2 text-sm text-slate-600">
+            <span className="font-medium text-slate-500">Intensity: </span>
             {event.intensity}
           </p>
         )}
         {event.distance && (
-          <p className="mb-2 text-sm text-gray-600">
-            <span className="font-medium text-gray-500">Distance: </span>
+          <p className="mb-2 text-sm text-slate-600">
+            <span className="font-medium text-slate-500">Distance: </span>
             {event.distance}
           </p>
         )}
         {event.pace_or_effort && (
-          <p className="mb-2 text-sm text-gray-600">
-            <span className="font-medium text-gray-500">Target pace/effort: </span>
+          <p className="mb-2 text-sm text-slate-600">
+            <span className="font-medium text-slate-500">Target pace/effort: </span>
             {event.pace_or_effort}
           </p>
         )}
         {event.plan_reference && (
-          <p className="mb-2 text-sm text-gray-600">
-            <span className="font-medium text-gray-500">Training plan: </span>
+          <p className="mb-2 text-sm text-slate-600">
+            <span className="font-medium text-slate-500">Training plan: </span>
             {event.plan_reference}
           </p>
         )}
 
         {event.structure && (
-          <div className="mt-3 border-t border-gray-100 pt-3">
-            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-gray-400">
+          <div className="mt-3 border-t border-slate-100 pt-3">
+            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-400">
               Session structure
             </p>
-            <p className="whitespace-pre-wrap text-sm text-gray-700">
+            <p className="whitespace-pre-wrap text-sm text-slate-700">
               {event.structure}
             </p>
           </div>
         )}
 
         {event.notes && (
-          <div className="mt-3 border-t border-gray-100 pt-3">
-            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-gray-400">
+          <div className="mt-3 border-t border-slate-100 pt-3">
+            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-400">
               Notes
             </p>
-            <p className="whitespace-pre-wrap text-sm text-gray-700">
+            <p className="whitespace-pre-wrap text-sm text-slate-700">
               {event.notes}
             </p>
           </div>
         )}
 
-        <div className="mt-4 flex items-center gap-3 border-t border-gray-100 pt-3">
+        <div className="mt-4 flex items-center gap-3 border-t border-slate-100 pt-3">
           <Link
             href={`/plan/${event.id}/edit`}
-            className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
             Edit
           </Link>
           <button
             type="button"
             onClick={handleDelete}
-            className="rounded-md border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
+            className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
           >
             Delete
           </button>

@@ -21,8 +21,8 @@ import {
 import { formatTime } from "@/lib/date";
 
 const INPUT_CLASS =
-  "w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-gray-500 focus:outline-none";
-const LABEL_CLASS = "mb-1 block text-xs font-medium text-gray-500";
+  "w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-slate-500 focus:outline-none";
+const LABEL_CLASS = "mb-1 block text-xs font-medium text-slate-500";
 
 function formatFullDateTime(suggestion: AgentSuggestion): string {
   if (!suggestion.start_time) return "";
@@ -254,7 +254,7 @@ export default function SuggestionDetailModal({
         role="dialog"
         aria-modal="true"
         aria-label={suggestion.title}
-        className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-lg bg-white p-5 shadow-xl"
+        className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-2xl border border-slate-100 bg-white p-5 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex items-start justify-between gap-3">
@@ -269,7 +269,7 @@ export default function SuggestionDetailModal({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
           >
             ✕
           </button>
@@ -406,17 +406,17 @@ export default function SuggestionDetailModal({
             </label>
 
             {error && (
-              <div className="rounded-md border border-red-200 bg-red-50 p-2 text-xs text-red-700">
+              <div className="rounded-lg border border-red-200 bg-red-50 p-2 text-xs text-red-700">
                 {error}
               </div>
             )}
 
-            <div className="flex gap-2 border-t border-gray-100 pt-3">
+            <div className="flex gap-2 border-t border-slate-100 pt-3">
               <button
                 type="button"
                 disabled={busy}
                 onClick={handleSaveEdit}
-                className="rounded-md bg-blue-800 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {busy ? "Saving…" : "Save"}
               </button>
@@ -428,7 +428,7 @@ export default function SuggestionDetailModal({
                   setDraft(null);
                   setError(null);
                 }}
-                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
               >
                 Cancel
               </button>
@@ -436,106 +436,106 @@ export default function SuggestionDetailModal({
           </div>
         ) : (
           <>
-            <h2 className="mb-2 text-lg font-semibold text-gray-900">
+            <h2 className="mb-2 text-lg font-semibold text-slate-900">
               {suggestion.title}
             </h2>
 
             {suggestion.start_time && (
-              <p className="mb-2 text-sm text-gray-600">
+              <p className="mb-2 text-sm text-slate-600">
                 {formatFullDateTime(suggestion)}
               </p>
             )}
 
             {suggestion.type && (
-              <p className="mb-2 text-sm text-gray-600">
-                <span className="font-medium text-gray-500">Discipline: </span>
+              <p className="mb-2 text-sm text-slate-600">
+                <span className="font-medium text-slate-500">Discipline: </span>
                 {suggestion.type}
               </p>
             )}
             {suggestion.intensity && (
-              <p className="mb-2 text-sm text-gray-600">
-                <span className="font-medium text-gray-500">Intensity: </span>
+              <p className="mb-2 text-sm text-slate-600">
+                <span className="font-medium text-slate-500">Intensity: </span>
                 {suggestion.intensity}
               </p>
             )}
             {duration && (
-              <p className="mb-2 text-sm text-gray-600">
-                <span className="font-medium text-gray-500">Duration: </span>
+              <p className="mb-2 text-sm text-slate-600">
+                <span className="font-medium text-slate-500">Duration: </span>
                 {duration}
               </p>
             )}
             {suggestion.distance && (
-              <p className="mb-2 text-sm text-gray-600">
-                <span className="font-medium text-gray-500">Distance: </span>
+              <p className="mb-2 text-sm text-slate-600">
+                <span className="font-medium text-slate-500">Distance: </span>
                 {suggestion.distance}
               </p>
             )}
             {suggestion.pace_or_effort && (
-              <p className="mb-2 text-sm text-gray-600">
-                <span className="font-medium text-gray-500">Target pace/effort: </span>
+              <p className="mb-2 text-sm text-slate-600">
+                <span className="font-medium text-slate-500">Target pace/effort: </span>
                 {suggestion.pace_or_effort}
               </p>
             )}
             {suggestion.location && (
-              <p className="mb-2 text-sm text-gray-600">
-                <span className="font-medium text-gray-500">Location: </span>
+              <p className="mb-2 text-sm text-slate-600">
+                <span className="font-medium text-slate-500">Location: </span>
                 {suggestion.location}
               </p>
             )}
             {suggestion.plan_reference && (
-              <p className="mb-2 text-sm text-gray-600">
-                <span className="font-medium text-gray-500">Training plan: </span>
+              <p className="mb-2 text-sm text-slate-600">
+                <span className="font-medium text-slate-500">Training plan: </span>
                 {suggestion.plan_reference}
               </p>
             )}
 
             {suggestion.structure && (
-              <div className="mt-3 border-t border-gray-100 pt-3">
-                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-gray-400">
+              <div className="mt-3 border-t border-slate-100 pt-3">
+                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-400">
                   Session structure
                 </p>
-                <p className="whitespace-pre-wrap text-sm text-gray-700">
+                <p className="whitespace-pre-wrap text-sm text-slate-700">
                   {suggestion.structure}
                 </p>
               </div>
             )}
 
             {suggestion.reason && (
-              <div className="mt-3 border-t border-gray-100 pt-3">
-                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-gray-400">
+              <div className="mt-3 border-t border-slate-100 pt-3">
+                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-400">
                   Coaching rationale
                 </p>
-                <p className="whitespace-pre-wrap text-sm text-gray-700">
+                <p className="whitespace-pre-wrap text-sm text-slate-700">
                   {suggestion.reason}
                 </p>
               </div>
             )}
 
             {suggestion.risk_warning && (
-              <div className="mt-3 rounded-md border border-red-200 bg-red-50 p-2 text-xs text-red-700">
+              <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-2 text-xs text-red-700">
                 {suggestion.risk_warning}
               </div>
             )}
 
             {conflict && (
-              <div className="mt-3 rounded-md border border-red-200 bg-red-50 p-2 text-xs text-red-700">
+              <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-2 text-xs text-red-700">
                 This overlaps something already on your calendar. Review before
                 accepting.
               </div>
             )}
 
             {error && (
-              <div className="mt-3 rounded-md border border-red-200 bg-red-50 p-2 text-xs text-red-700">
+              <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-2 text-xs text-red-700">
                 {error}
               </div>
             )}
 
-            <div className="mt-4 flex flex-wrap gap-2 border-t border-gray-100 pt-3">
+            <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
               <button
                 type="button"
                 disabled={busy}
                 onClick={handleAccept}
-                className="rounded-md bg-blue-800 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Accept
               </button>
@@ -543,7 +543,7 @@ export default function SuggestionDetailModal({
                 type="button"
                 disabled={busy}
                 onClick={startEditing}
-                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Edit
               </button>
@@ -551,7 +551,7 @@ export default function SuggestionDetailModal({
                 type="button"
                 disabled={busy}
                 onClick={handleReject}
-                className="rounded-md border border-red-300 px-3 py-1.5 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-lg border border-red-300 px-3 py-1.5 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Reject
               </button>

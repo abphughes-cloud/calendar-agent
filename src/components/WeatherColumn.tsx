@@ -24,7 +24,7 @@ export default function WeatherColumn({
 
   return (
     <div
-      className="relative flex-shrink-0 border-r border-gray-200 bg-slate-50"
+      className="relative flex-shrink-0 border-r border-slate-200 bg-slate-50"
       style={{ width: WEATHER_COLUMN_WIDTH, height: hours.length * hourPx }}
     >
       {hours.map((hour) => {
@@ -35,7 +35,7 @@ export default function WeatherColumn({
           return (
             <div
               key={hour}
-              className="absolute inset-x-0 border-t border-gray-100"
+              className="absolute inset-x-0 border-t border-slate-100"
               style={{ top, height: hourPx }}
             />
           );
@@ -69,7 +69,7 @@ export default function WeatherColumn({
           <div
             key={hour}
             title={tooltip}
-            className="absolute inset-x-0 flex flex-col items-center justify-center border-t border-gray-100 leading-none text-gray-700"
+            className="absolute inset-x-0 flex flex-col items-center justify-center border-t border-slate-100 leading-none text-slate-700"
             style={{ top, height: hourPx }}
           >
             <span className="text-sm">{weatherEmoji(weather.weatherCode)}</span>
