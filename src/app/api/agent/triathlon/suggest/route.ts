@@ -5,6 +5,7 @@ import { createClient } from "@/utils/supabase/server";
 import { computeFreeWindows, type BusyInterval } from "@/lib/freeWindows";
 import { generateTriathlonSuggestions } from "@/lib/agent/triathlon";
 import { loadAthleteContext } from "@/lib/agent/context";
+import { fetchWeekWeather, type HourlyWeather } from "@/lib/weather";
 import { addDays } from "@/lib/week";
 import type { UserPreferences } from "@/lib/planning";
 
@@ -82,6 +83,16 @@ export async function POST() {
 
   const athleteContext = await loadAthleteContext();
 
+  // Weather is an input to suggestion quality, not a hard dependency — a
+  // failed forecast must never block generating suggestions.
+  let weatherHourly: HourlyWeather[] | null = null;
+  try {
+    weatherHourly = await fetchWeekWeather({ weekStart: rangeStart, weekEnd: rangeEnd });
+  } catch (error) {
+    console.error("[Agent] Failed to load weather forecast; continuing without it", error);
+    weatherHourly = null;
+  }
+
   let suggestions;
   try {
     suggestions = await generateTriathlonSuggestions({
@@ -93,6 +104,7 @@ export async function POST() {
         start_time: e.start_time as string,
       })),
       today: now,
+      weatherHourly,
     });
   } catch (error) {
     console.error("[Agent] Failed to generate suggestions", error);

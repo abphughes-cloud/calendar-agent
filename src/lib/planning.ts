@@ -46,9 +46,15 @@ export interface AgentSuggestion {
   plan_reference: string | null;
   risk_warning: string | null;
   status: string;
+  is_edited: boolean;
+  edited_at: string | null;
+  original_start: string | null;
+  original_end: string | null;
   created_at: string;
   updated_at: string;
 }
+
+export const SUGGESTION_TYPES = ["Swim", "Bike", "Run", "Brick", "Strength"] as const;
 
 export const PLAN_EVENT_TYPES = [
   "Swim",

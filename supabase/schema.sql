@@ -75,6 +75,10 @@ create table if not exists agent_suggestions (
   pace_or_effort text,
   plan_reference text,
   risk_warning text,
+  is_edited boolean not null default false,
+  edited_at timestamptz,
+  original_start timestamptz,
+  original_end timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -85,6 +89,10 @@ alter table agent_suggestions add column if not exists structure text;
 alter table agent_suggestions add column if not exists pace_or_effort text;
 alter table agent_suggestions add column if not exists plan_reference text;
 alter table agent_suggestions add column if not exists risk_warning text;
+alter table agent_suggestions add column if not exists is_edited boolean not null default false;
+alter table agent_suggestions add column if not exists edited_at timestamptz;
+alter table agent_suggestions add column if not exists original_start timestamptz;
+alter table agent_suggestions add column if not exists original_end timestamptz;
 
 -- ---------------------------------------------------------------------
 -- feedback: reserved for feedback on future agent suggestions. No app

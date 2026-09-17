@@ -4,6 +4,7 @@ import { CalendarApiError, fetchUpcomingEvents } from "@/lib/calendar";
 import { withCategory } from "@/lib/category";
 import { addDays, parseDateKey, startOfWeek } from "@/lib/week";
 import type { AgentSuggestion, PlanEvent } from "@/lib/planning";
+import { fetchWeekWeather, type HourlyWeather } from "@/lib/weather";
 import { createClient } from "@/utils/supabase/server";
 import CalendarWithAgent from "@/components/CalendarWithAgent";
 import CalendarDebugPanel from "@/components/CalendarDebugPanel";
@@ -120,6 +121,15 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     console.error("[Supabase] Failed to load agent_suggestions", error);
   }
 
+  // Live weather overlay, independent of the fetches above for the same
+  // reason: a failed forecast must never break the calendar.
+  let weather: HourlyWeather[] = [];
+  try {
+    weather = await fetchWeekWeather({ weekStart, weekEnd });
+  } catch (error) {
+    console.error("[Weather] Failed to load forecast", error);
+  }
+
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
       <header className="mb-6 flex items-center justify-between">
@@ -171,6 +181,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
           events={events}
           planEvents={planEvents}
           initialSuggestions={suggestions}
+          weather={weather}
         />
       )}
 

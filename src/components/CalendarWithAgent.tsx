@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CategorizedEvent } from "@/lib/category";
 import type { AgentSuggestion, PlanEvent } from "@/lib/planning";
+import type { HourlyWeather } from "@/lib/weather";
 import { addDays } from "@/lib/week";
 import { clearPendingSuggestions } from "@/app/agent/actions";
 import WeekCalendar from "@/components/WeekCalendar";
@@ -13,11 +14,13 @@ export default function CalendarWithAgent({
   events,
   planEvents,
   initialSuggestions,
+  weather,
 }: {
   weekStart: Date;
   events: CategorizedEvent[];
   planEvents: PlanEvent[];
   initialSuggestions: AgentSuggestion[];
+  weather: HourlyWeather[];
 }) {
   const router = useRouter();
   const [suggestions, setSuggestions] =
@@ -106,6 +109,17 @@ export default function CalendarWithAgent({
     setSuggestions((prev) => prev.filter((s) => s.id !== id));
   }
 
+  function handleSuggestionUpdated(updated: AgentSuggestion) {
+    setErrorMessage(null);
+    setSuggestions((prev) =>
+      prev.map((s) => (s.id === updated.id ? updated : s))
+    );
+  }
+
+  function handlePlacementError(message: string) {
+    setErrorMessage(message);
+  }
+
   const showEmptyState =
     !loading && !clearing && !errorMessage && !infoMessage && suggestions.length === 0;
 
@@ -150,7 +164,10 @@ export default function CalendarWithAgent({
         events={events}
         planEvents={planEvents}
         suggestions={suggestions}
+        weather={weather}
         onSuggestionRemoved={removeSuggestion}
+        onSuggestionUpdated={handleSuggestionUpdated}
+        onPlacementError={handlePlacementError}
       />
     </div>
   );

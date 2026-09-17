@@ -3,6 +3,11 @@ import type { FreeWindow } from "@/lib/freeWindows";
 import type { UserPreferences } from "@/lib/planning";
 import { formatTime } from "@/lib/date";
 import { toDateKey } from "@/lib/week";
+import {
+  type HourlyWeather,
+  formatWindowWeather,
+  summarizeWindowWeather,
+} from "@/lib/weather";
 
 const MODEL = "gpt-4o-mini";
 const TRAINING_TYPES = ["Swim", "Bike", "Run", "Brick", "Strength"] as const;
@@ -138,6 +143,15 @@ Bike realism (apply the context document's exact numbers if it gives them; other
 - A long endurance ride is usually 2.5-4.25 hours.
 - A bike session of 45-75 minutes is only realistic if it is explicitly a recovery spin, turbo/indoor session, commute-based light aerobic ride, or short taper-week ride — say which in structure or reason. Do not suggest a short "long ride" or a short dedicated outdoor Richmond-Park-style ride.
 
+Weather awareness (a secondary factor — calendar fit, athlete context, training-plan mapping, buffers, and fatigue/already-accepted workouts still matter more than weather):
+- Some free windows below include a live weather summary (temperature, rain chance, wind) from the UK Met Office forecast. Where present, weigh it when choosing which window suits which session — but never let it override the core rules above, and never invent conditions for a window with no weather summary.
+- Heavy rain or high wind (gusts roughly 40km/h+): avoid placing a long outdoor bike in that window if a workable alternative window or session exists — prefer swim, strength/gym, turbo/indoor bike, or a shorter indoor option instead.
+- A calm, dry window: outdoor run or an outdoor ride (e.g. Richmond Park) becomes a more attractive choice for that slot.
+- Cold, dark ("before sunrise/after sunset"), or wet early mornings: add a brief caution in reason, or suggest an indoor alternative if one is realistic for the session type.
+- Windy conditions: avoid exposed long rides, or clearly flag the wind risk in risk_warning.
+- Warm conditions (roughly 20°C+): mention hydration and pace/intensity caution in reason for longer or harder sessions.
+- When weather meaningfully influenced why a suggestion was placed in its window, add one short weather sentence to reason, e.g. "Weather looks dry and calm, so this is a good outdoor bike slot."
+
 Required detail — every suggestion must include real values, not placeholders:
 - type: one of Swim, Bike, Run, Brick, Strength.
 - intensity: one of Low, Medium, High.
@@ -168,12 +182,18 @@ function formatPreferences(preferences: UserPreferences | null): string {
   ].join("\n");
 }
 
-function formatFreeWindows(freeWindows: FreeWindow[]): string {
+function formatFreeWindows(
+  freeWindows: FreeWindow[],
+  weatherHourly: HourlyWeather[] | null
+): string {
   return freeWindows
-    .map(
-      (w) =>
-        `- ${w.date}: ${formatTime(w.start)}–${formatTime(w.end)} (start_time=${w.start}, end_time=${w.end})`
-    )
+    .map((w) => {
+      const base = `- ${w.date}: ${formatTime(w.start)}–${formatTime(w.end)} (start_time=${w.start}, end_time=${w.end})`;
+      if (!weatherHourly || weatherHourly.length === 0) return base;
+      const summary = summarizeWindowWeather(weatherHourly, w.start, w.end);
+      if (!summary) return base;
+      return `${base} — weather: ${formatWindowWeather(summary)}`;
+    })
     .join("\n");
 }
 
@@ -181,7 +201,8 @@ function buildUserPrompt(
   preferences: UserPreferences | null,
   freeWindows: FreeWindow[],
   athleteContext: string | null,
-  today: Date
+  today: Date,
+  weatherHourly: HourlyWeather[] | null
 ): string {
   const sections = [
     `Today's date: ${toDateKey(today)}`,
@@ -189,7 +210,7 @@ function buildUserPrompt(
     athleteContext
       ? `Athlete training context document (authoritative — use this for logistics, location, fatigue, injury, training-plan week, and race-plan judgment):\n\n${athleteContext}`
       : "No athlete training context document is available for this request — use the saved preferences above and general triathlon coaching judgment only.",
-    `Free time windows over the next 7 days (candidate slots only — do not treat every window as automatically usable; judge each against the context document's logistics/fatigue rules before using it):\n${formatFreeWindows(freeWindows)}`,
+    `Free time windows over the next 7 days (candidate slots only — do not treat every window as automatically usable; judge each against the context document's logistics/fatigue rules, and the weather summary where present, before using it):\n${formatFreeWindows(freeWindows, weatherHourly)}`,
   ];
   return sections.join("\n\n---\n\n");
 }
@@ -378,12 +399,14 @@ export async function generateTriathlonSuggestions({
   athleteContext,
   existingWorkouts = [],
   today = new Date(),
+  weatherHourly = null,
 }: {
   preferences: UserPreferences | null;
   freeWindows: FreeWindow[];
   athleteContext: string | null;
   existingWorkouts?: ExistingWorkout[];
   today?: Date;
+  weatherHourly?: HourlyWeather[] | null;
 }): Promise<TriathlonSuggestion[]> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
@@ -399,7 +422,7 @@ export async function generateTriathlonSuggestions({
       { role: "system", content: SYSTEM_PROMPT },
       {
         role: "user",
-        content: buildUserPrompt(preferences, freeWindows, athleteContext, today),
+        content: buildUserPrompt(preferences, freeWindows, athleteContext, today, weatherHourly),
       },
     ],
     response_format: {

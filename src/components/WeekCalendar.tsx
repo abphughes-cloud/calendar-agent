@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { CategorizedEvent } from "@/lib/category";
 import { ALL_CATEGORIES, categoryStyle } from "@/lib/category";
 import type { AgentSuggestion, PlanEvent } from "@/lib/planning";
+import type { HourlyWeather } from "@/lib/weather";
 import { layoutOverlaps } from "@/lib/layout";
 import { addDays, formatDayHeader, formatWeekRangeLabel, startOfWeek, toDateKey } from "@/lib/week";
 import EventBlock from "@/components/EventBlock";
@@ -13,12 +14,17 @@ import PlanEventBlock from "@/components/PlanEventBlock";
 import PlanEventModal from "@/components/PlanEventModal";
 import SuggestionBlock from "@/components/SuggestionBlock";
 import SuggestionDetailModal from "@/components/SuggestionDetailModal";
+import WeatherColumn, { WEATHER_COLUMN_WIDTH } from "@/components/WeatherColumn";
+import { checkSuggestionDuration, checkSuggestionPlacement } from "@/lib/agent/suggestionPlacement";
+import { updateSuggestion } from "@/app/agent/actions";
 
 const START_HOUR = 6;
 const END_HOUR = 23;
 const HOUR_PX = 48;
 const GRID_HEIGHT = (END_HOUR - START_HOUR) * HOUR_PX;
-const DAY_COLUMN_MIN_WIDTH = 240;
+// Room for the event/suggestion grid plus its dedicated weather lane.
+const DAY_COLUMN_MIN_WIDTH = 240 + WEATHER_COLUMN_WIDTH;
+const PX_PER_MINUTE = HOUR_PX / 60;
 
 function minutesOfDay(iso: string): number {
   const d = new Date(iso);
@@ -90,13 +96,19 @@ export default function WeekCalendar({
   events,
   planEvents,
   suggestions,
+  weather,
   onSuggestionRemoved,
+  onSuggestionUpdated,
+  onPlacementError,
 }: {
   weekStart: Date;
   events: CategorizedEvent[];
   planEvents: PlanEvent[];
   suggestions: AgentSuggestion[];
+  weather: HourlyWeather[];
   onSuggestionRemoved: (id: string) => void;
+  onSuggestionUpdated: (updated: AgentSuggestion) => void;
+  onPlacementError: (message: string) => void;
 }) {
   const [selectedEvent, setSelectedEvent] = useState<CategorizedEvent | null>(
     null
@@ -104,8 +116,101 @@ export default function WeekCalendar({
   const [selectedPlanEvent, setSelectedPlanEvent] = useState<PlanEvent | null>(
     null
   );
-  const [selectedSuggestion, setSelectedSuggestion] =
-    useState<AgentSuggestion | null>(null);
+  // Only the id is kept as state; the suggestion itself is derived from the
+  // authoritative `suggestions` list below. Storing the object directly
+  // would go stale the moment an edit is saved while the modal stays open
+  // (e.g. a same-session Accept click would then persist pre-edit values).
+  const [selectedSuggestionId, setSelectedSuggestionId] = useState<
+    string | null
+  >(null);
+  const selectedSuggestion =
+    suggestions.find((s) => s.id === selectedSuggestionId) ?? null;
+
+  async function commitSuggestionChange(
+    suggestion: AgentSuggestion,
+    newStart: Date,
+    newEnd: Date
+  ) {
+    const placement = checkSuggestionPlacement({
+      start: newStart,
+      end: newEnd,
+      events,
+      planEvents,
+      suggestions,
+      excludeSuggestionId: suggestion.id,
+    });
+    if (!placement.ok) {
+      onPlacementError(
+        placement.message ?? "This move conflicts with another event or does not leave enough buffer."
+      );
+      return;
+    }
+
+    const minutes = (newEnd.getTime() - newStart.getTime()) / 60000;
+    const contextText = [suggestion.structure, suggestion.reason, suggestion.plan_reference]
+      .filter(Boolean)
+      .join(" ");
+    const durationCheck = checkSuggestionDuration(suggestion.type, minutes, contextText);
+    if (!durationCheck.ok) {
+      onPlacementError(
+        durationCheck.message ?? "That duration isn't realistic for this discipline."
+      );
+      return;
+    }
+
+    try {
+      const updated = await updateSuggestion(suggestion.id, {
+        start_time: newStart.toISOString(),
+        end_time: newEnd.toISOString(),
+      });
+      onSuggestionUpdated(updated);
+    } catch (error) {
+      onPlacementError(
+        error instanceof Error ? error.message : "Could not save the change."
+      );
+    }
+  }
+
+  function handleResizeEnd(suggestion: AgentSuggestion, newEnd: Date) {
+    if (!suggestion.start_time) return;
+    commitSuggestionChange(suggestion, new Date(suggestion.start_time), newEnd);
+  }
+
+  // Called once a pointer-driven tile drag ends (see SuggestionBlock), with
+  // the day column it was released over (by data-day-key) and the raw
+  // minutes-from-grid-start of the release point (already 15-min snapped).
+  function handleSuggestionDragEnd(
+    suggestion: AgentSuggestion,
+    dayKey: string,
+    minutesFromGridStart: number
+  ) {
+    if (!suggestion.start_time || !suggestion.end_time) return;
+    const day = days.find((d) => toDateKey(d) === dayKey);
+    if (!day) return;
+
+    const clampedMinutes = Math.max(
+      0,
+      Math.min((END_HOUR - START_HOUR) * 60, minutesFromGridStart)
+    );
+
+    const newStart = new Date(day);
+    newStart.setHours(START_HOUR, 0, 0, 0);
+    newStart.setMinutes(newStart.getMinutes() + clampedMinutes);
+
+    const durationMs =
+      new Date(suggestion.end_time).getTime() - new Date(suggestion.start_time).getTime();
+    let newEnd = new Date(newStart.getTime() + durationMs);
+
+    const gridEndForDay = new Date(day);
+    gridEndForDay.setHours(END_HOUR, 0, 0, 0);
+    if (newEnd > gridEndForDay) {
+      const overflow = newEnd.getTime() - gridEndForDay.getTime();
+      newStart.setTime(newStart.getTime() - overflow);
+      newEnd = new Date(newStart.getTime() + durationMs);
+    }
+
+    commitSuggestionChange(suggestion, newStart, newEnd);
+  }
 
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const todayKey = toDateKey(new Date());
@@ -134,6 +239,14 @@ export default function WeekCalendar({
     const list = suggestionsByDay.get(key) ?? [];
     list.push(suggestion);
     suggestionsByDay.set(key, list);
+  }
+
+  const weatherByDay = new Map<string, HourlyWeather[]>();
+  for (const hour of weather) {
+    const key = toDateKey(new Date(hour.time));
+    const list = weatherByDay.get(key) ?? [];
+    list.push(hour);
+    weatherByDay.set(key, list);
   }
 
   const hours = Array.from(
@@ -229,6 +342,7 @@ export default function WeekCalendar({
             const timedEvents = dayEvents.filter((e) => !e.isAllDay);
             const dayPlanEvents = planEventsByDay.get(dayKey) ?? [];
             const daySuggestions = suggestionsByDay.get(dayKey) ?? [];
+            const dayWeather = weatherByDay.get(dayKey) ?? [];
 
             const laidOut = layoutOverlaps(
               timedEvents,
@@ -287,60 +401,76 @@ export default function WeekCalendar({
                   </div>
                 )}
 
-                <div className="relative" style={{ height: GRID_HEIGHT }}>
-                  {hours.map((hour) => (
-                    <div
-                      key={hour}
-                      className="absolute left-0 right-0 border-t border-gray-100"
-                      style={{ top: (hour - START_HOUR) * HOUR_PX }}
-                    />
-                  ))}
+                <div className="flex">
+                  <WeatherColumn
+                    hourly={dayWeather}
+                    hours={hours}
+                    startHour={START_HOUR}
+                    hourPx={HOUR_PX}
+                  />
 
-                  {laidOut.map(({ event, column, columnCount }) => {
-                    const { top, height } = blockPosition(event);
-                    return (
-                      <EventBlock
-                        key={event.id}
-                        event={event}
-                        top={top}
-                        height={height}
-                        left={`calc(${(column / columnCount) * 100}% + 1px)`}
-                        width={`calc(${100 / columnCount}% - 2px)`}
-                        onSelect={setSelectedEvent}
+                  <div
+                    className="relative flex-1"
+                    style={{ height: GRID_HEIGHT }}
+                    data-day-key={dayKey}
+                  >
+                    {hours.map((hour) => (
+                      <div
+                        key={hour}
+                        className="absolute left-0 right-0 border-t border-gray-100"
+                        style={{ top: (hour - START_HOUR) * HOUR_PX }}
                       />
-                    );
-                  })}
+                    ))}
 
-                  {laidOutPlan.map(({ event, column, columnCount }) => {
-                    const { top, height } = planBlockPosition(event);
-                    return (
-                      <PlanEventBlock
-                        key={event.id}
-                        event={event}
-                        top={top}
-                        height={height}
-                        left={`calc(${(column / columnCount) * 100}% + 1px)`}
-                        width={`calc(${100 / columnCount}% - 2px)`}
-                        onSelect={setSelectedPlanEvent}
-                      />
-                    );
-                  })}
+                    {laidOut.map(({ event, column, columnCount }) => {
+                      const { top, height } = blockPosition(event);
+                      return (
+                        <EventBlock
+                          key={event.id}
+                          event={event}
+                          top={top}
+                          height={height}
+                          left={`calc(${(column / columnCount) * 100}% + 1px)`}
+                          width={`calc(${100 / columnCount}% - 2px)`}
+                          onSelect={setSelectedEvent}
+                        />
+                      );
+                    })}
 
-                  {laidOutSuggestions.map(({ event, column, columnCount }) => {
-                    const { top, height } = suggestionBlockPosition(event);
-                    return (
-                      <SuggestionBlock
-                        key={event.id}
-                        suggestion={event}
-                        top={top}
-                        height={height}
-                        left={`calc(${(column / columnCount) * 100}% + 1px)`}
-                        width={`calc(${100 / columnCount}% - 2px)`}
-                        conflict={suggestionConflicts(event, events, planEvents)}
-                        onSelect={setSelectedSuggestion}
-                      />
-                    );
-                  })}
+                    {laidOutPlan.map(({ event, column, columnCount }) => {
+                      const { top, height } = planBlockPosition(event);
+                      return (
+                        <PlanEventBlock
+                          key={event.id}
+                          event={event}
+                          top={top}
+                          height={height}
+                          left={`calc(${(column / columnCount) * 100}% + 1px)`}
+                          width={`calc(${100 / columnCount}% - 2px)`}
+                          onSelect={setSelectedPlanEvent}
+                        />
+                      );
+                    })}
+
+                    {laidOutSuggestions.map(({ event, column, columnCount }) => {
+                      const { top, height } = suggestionBlockPosition(event);
+                      return (
+                        <SuggestionBlock
+                          key={event.id}
+                          suggestion={event}
+                          top={top}
+                          height={height}
+                          left={`calc(${(column / columnCount) * 100}% + 1px)`}
+                          width={`calc(${100 / columnCount}% - 2px)`}
+                          conflict={suggestionConflicts(event, events, planEvents)}
+                          pxPerMinute={PX_PER_MINUTE}
+                          onSelect={(s) => setSelectedSuggestionId(s.id)}
+                          onResizeEnd={handleResizeEnd}
+                          onDragEnd={handleSuggestionDragEnd}
+                        />
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             );
@@ -364,8 +494,12 @@ export default function WeekCalendar({
             ? suggestionConflicts(selectedSuggestion, events, planEvents)
             : false
         }
-        onClose={() => setSelectedSuggestion(null)}
+        events={events}
+        planEvents={planEvents}
+        suggestions={suggestions}
+        onClose={() => setSelectedSuggestionId(null)}
         onRemoved={onSuggestionRemoved}
+        onUpdated={onSuggestionUpdated}
       />
     </div>
   );
